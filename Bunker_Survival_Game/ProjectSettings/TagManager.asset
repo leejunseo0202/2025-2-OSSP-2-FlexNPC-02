@@ -12,6 +12,7 @@ TagManager:
   - Fun
   - Hunger
   - Energy
+  - Ground
   layers:
   - Default
   - TransparentFX
@@ -19,7 +20,7 @@ TagManager:
   - 
   - Water
   - UI
-  - 
+  - Ground
   - 
   - 
   - 
