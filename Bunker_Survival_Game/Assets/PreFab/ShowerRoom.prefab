@@ -12,6 +12,7 @@ GameObject:
   - component: {fileID: 2065523803897500173}
   - component: {fileID: 1663269366155022704}
   - component: {fileID: 6531654305190184287}
+  - component: {fileID: 7009753684503567596}
   m_Layer: 0
   m_Name: ShowerRoom
   m_TagString: Hygiene
@@ -28,7 +29,7 @@ Transform:
   m_GameObject: {fileID: 431579040604597055}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -28.02, y: 2.42, z: 39.53}
+  m_LocalPosition: {x: -26.1, y: 1.98, z: 39.53}
   m_LocalScale: {x: 3, y: 3, z: 3}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -111,3 +112,17 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 1, y: 1, z: 1}
   m_Center: {x: 0, y: 0, z: 0}
+--- !u!114 &7009753684503567596
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 431579040604597055}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7f628a015a920bc4dbc76733186da0e0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Building
+  size: {x: 3, y: 3}
+  height: 3

@@ -1,13 +1,11 @@
 using UnityEngine;
+using System.Collections.Generic; // List<>를 사용하기 위해 추가
 
 public class GridManager : MonoBehaviour
-{ // <--- 클래스 시작
-
+{
     public int mapWidth = 100;
     public int mapHeight = 100;
     public float gridSize = 1f;
-
-    // (이전 단계에서 추가했던 원점 - 일단은 0,0,0으로 둡니다)
     public Vector3 gridOrigin = Vector3.zero;
 
     private bool[,] occupancyGrid;
@@ -17,7 +15,7 @@ public class GridManager : MonoBehaviour
         occupancyGrid = new bool[mapWidth, mapHeight];
     }
 
-    // --- 좌표 변환 함수들 ---
+    // [필수 함수 1] 월드 좌표 -> 그리드 좌표 (마우스 위치 변환용)
     public Vector2Int WorldToGridPosition(Vector3 worldPosition)
     {
         Vector3 relativePos = worldPosition - gridOrigin;
@@ -26,54 +24,58 @@ public class GridManager : MonoBehaviour
         return new Vector2Int(x, z);
     }
 
-    public Vector3 GridToWorldPosition(Vector2Int gridPosition)
+    // [필수 함수 2] 그리드 좌표 -> 월드 좌표 (건물 배치용 '모서리')
+    public Vector3 GridToWorldPosition_BottomLeft(Vector2Int gridPosition)
     {
-        float x = (gridPosition.x * gridSize) + (gridSize / 2f) + gridOrigin.x;
-        float z = (gridPosition.y * gridSize) + (gridSize / 2f) + gridOrigin.z;
-
-        // --- [여기 수정!] ---
-        // 'gridSize / 2f' (절반) 대신 'gridSize' (전체)를 더합니다.
-        // 이렇게 하면 높이 2짜리 건물이 바닥(y=0)에 설 때 
-        // 피봇 위치(y=1)가 정확히 계산됩니다.
-        float y = gridOrigin.y + gridSize;
-        // ------------------
-
-        return new Vector3(x, y, z);
+        float x = (gridPosition.x * gridSize) + gridOrigin.x;
+        float z = (gridPosition.y * gridSize) + gridOrigin.z;
+        return new Vector3(x, gridOrigin.y, z);
     }
 
+    // [필수 함수 3] 그리드 좌표가 맵 범위 안인지 확인 (헬퍼 함수)
     public bool IsValidGridPosition(Vector2Int gridPos)
     {
         return gridPos.x >= 0 && gridPos.x < mapWidth &&
                gridPos.y >= 0 && gridPos.y < mapHeight;
     }
 
-    // --- [여기!] 에러가 발생한 함수들 ---
-    // 이 함수들이 클래스 { } 안에 있어야 합니다.
-
-    public bool IsPlacementValid(Vector2Int gridPos)
+    // [필수 함수 4] '문제가 있는 칸' 목록 반환 (유효성 검사용)
+    public List<Vector2Int> GetInvalidCells(Vector2Int gridPos, Vector2Int size)
     {
-        // 1. 맵 범위 안인지?
-        if (!IsValidGridPosition(gridPos))
-        {
-            return false;
-        }
+        List<Vector2Int> invalidCells = new List<Vector2Int>();
 
-        // 2. 이미 차있는지? (false가 '비어있음')
-        if (occupancyGrid[gridPos.x, gridPos.y])
+        for (int x = 0; x < size.x; x++)
         {
-            return false;
-        }
+            for (int y = 0; y < size.y; y++)
+            {
+                Vector2Int cellToTest = new Vector2Int(gridPos.x + x, gridPos.y + y);
 
-        // 모든 검사 통과
-        return true;
+                if (!IsValidGridPosition(cellToTest))
+                {
+                    invalidCells.Add(cellToTest); // 맵 벗어난 칸
+                }
+                else if (occupancyGrid[cellToTest.x, cellToTest.y])
+                {
+                    invalidCells.Add(cellToTest); // 이미 찬 칸
+                }
+            }
+        }
+        return invalidCells;
     }
 
-    public void SetGridOccupied(Vector2Int gridPos, bool isOccupied)
+    // [필수 함수 5] 그리드에 '차있음' 표시 (배치 확정용)
+    public void SetGridOccupied(Vector2Int gridPos, Vector2Int size, bool isOccupied)
     {
-        if (IsValidGridPosition(gridPos))
+        for (int x = 0; x < size.x; x++)
         {
-            occupancyGrid[gridPos.x, gridPos.y] = isOccupied;
+            for (int y = 0; y < size.y; y++)
+            {
+                Vector2Int cellToUpdate = new Vector2Int(gridPos.x + x, gridPos.y + y);
+                if (IsValidGridPosition(cellToUpdate))
+                {
+                    occupancyGrid[cellToUpdate.x, cellToUpdate.y] = isOccupied;
+                }
+            }
         }
     }
-
-} // <--- 클래스 끝. 이 중괄호 바깥에 함수가 있으면 안 됩니다.
+}

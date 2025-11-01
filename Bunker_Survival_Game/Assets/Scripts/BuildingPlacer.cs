@@ -1,74 +1,137 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
+using System.Collections.Generic;
 
 public class BuildingPlacer : MonoBehaviour
 {
     private GridManager gridManager;
-    public GameObject buildingPrefab_Test;
     public LayerMask groundLayerMask;
 
-    public Material validMaterial;
-    public Material invalidMaterial;
+    [Header("프리팹")]
+    public List<GameObject> buildingPrefabs;
+    public GameObject gridMarkerPrefab;
 
+    [Header("피드백 재질")]
+    public Material validMaterial;
+
+    // --- Private 상태 변수 ---
     private GameObject ghostBuilding;
     private Renderer ghostRenderer;
+    private GameObject currentPrefabToBuild;
+    private float currentBuildingHeight;
     private Vector2Int currentGridPos;
-    private bool isCurrentPosValid = false;
+    private Vector2Int currentBuildingSize;
+    private Vector3 currentSnappedWorldPos; // [새 변수] 스냅된 최종 위치 저장
+    private bool isCurrentPlacementValid = false; // [새 변수] 현재 배치 가능 여부 저장
+
+    private List<GameObject> gridMarkers = new List<GameObject>();
 
     void Start()
     {
         gridManager = GetComponent<GridManager>();
     }
 
-    public void StartPlacingBuilding(GameObject prefabToPlace)
-    {
-        if (ghostBuilding != null)
-        {
-            Destroy(ghostBuilding);
-        }
-
-        ghostBuilding = Instantiate(prefabToPlace);
-
-        ghostRenderer = ghostBuilding.GetComponentInChildren<Renderer>();
-
-        // --- [여기!] CS0104 에러 수정 ---
-        // 'Debug.LogError' -> 'UnityEngine.Debug.LogError'로 명확하게 지정
-        if (ghostRenderer == null)
-        {
-            UnityEngine.Debug.LogError("빌딩 프리팹에 Renderer 컴포넌트가 없습니다!");
-        }
-        // --------------------------
-
-        Collider ghostCollider = ghostBuilding.GetComponent<Collider>();
-        if (ghostCollider != null)
-        {
-            ghostCollider.enabled = false;
-        }
-    }
-
+    /// <summary>
+    /// 매 프레임 호출되며, 입력과 고스트 위치를 관리합니다.
+    /// </summary>
     void Update()
     {
-        // --- 테스트용 '1'키 입력 ---
-        if (Keyboard.current != null && Keyboard.current[Key.Digit1].wasPressedThisFrame)
-        {
-            StartPlacingBuilding(buildingPrefab_Test);
-        }
+        HandleBuildingSelectionInput(); // F1-F6 키 입력 처리
 
-        // --- 배치 취소 (마우스 우클릭) ---
-        if (Mouse.current != null && Mouse.current.rightButton.wasPressedThisFrame && ghostBuilding != null)
-        {
-            Destroy(ghostBuilding);
-            ghostBuilding = null;
-            ghostRenderer = null;
-            return; // 배치 모드 종료
-        }
-
-        if (ghostBuilding == null || Mouse.current == null)
+        if (ghostBuilding == null) // 배치 모드가 아니면 중단
         {
             return;
         }
 
-        // --- 1. 레이캐스팅 및 스냅 ---
+        HandlePlacementCancellation(); // 배치 취소 (우클릭) 처리
+        UpdateGhostPositionAndFeedback(); // 고스트 위치 계산 및 시각적 피드백
+        HandlePlacementConfirmation(); // 배치 확정 (좌클릭) 처리
+    }
+
+    #region 입력 처리 (Input Handling)
+
+    /// <summary>
+    /// F1-F6 키를 감지하여 건물 배치 모드를 시작합니다.
+    /// </summary>
+    void HandleBuildingSelectionInput()
+    {
+        if (Keyboard.current == null) return;
+
+        if (Keyboard.current[Key.F1].wasPressedThisFrame && buildingPrefabs.Count > 0)
+            StartPlacingBuilding(buildingPrefabs[0]);
+        if (Keyboard.current[Key.F2].wasPressedThisFrame && buildingPrefabs.Count > 1)
+            StartPlacingBuilding(buildingPrefabs[1]);
+        if (Keyboard.current[Key.F3].wasPressedThisFrame && buildingPrefabs.Count > 2)
+            StartPlacingBuilding(buildingPrefabs[2]);
+        // (F4 ~ F6...)
+    }
+
+    /// <summary>
+    /// 마우스 우클릭으로 배치를 취소합니다.
+    /// </summary>
+    void HandlePlacementCancellation()
+    {
+        if (Mouse.current != null && Mouse.current.rightButton.wasPressedThisFrame)
+        {
+            StopPlacing();
+        }
+    }
+
+    /// <summary>
+    /// 마우스 좌클릭으로 배치를 확정합니다. (배치 가능할 때만)
+    /// </summary>
+    void HandlePlacementConfirmation()
+    {
+        if (isCurrentPlacementValid && Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame)
+        {
+            PlaceBuilding();
+        }
+    }
+
+    #endregion
+
+    #region 배치 로직 (Placement Logic)
+
+    /// <summary>
+    /// 배치 모드를 시작하고 '고스트'를 생성합니다.
+    /// </summary>
+    public void StartPlacingBuilding(GameObject prefabToPlace)
+    {
+        if (prefabToPlace == null) return;
+
+        StopPlacing(); // 혹시 이미 들고 있던 게 있다면 정리
+
+        currentPrefabToBuild = prefabToPlace;
+        ghostBuilding = Instantiate(prefabToPlace);
+        ghostRenderer = ghostBuilding.GetComponentInChildren<Renderer>();
+
+        Building buildingInfo = ghostBuilding.GetComponent<Building>();
+        if (buildingInfo != null)
+        {
+            currentBuildingSize = buildingInfo.size;
+            currentBuildingHeight = buildingInfo.height;
+        }
+        else
+        {
+            currentBuildingSize = new Vector2Int(1, 1);
+            currentBuildingHeight = 1.0f;
+            UnityEngine.Debug.LogError("프리팹에 'Building.cs' 컴포넌트가 없습니다!");
+        }
+
+        Collider ghostCollider = ghostBuilding.GetComponent<Collider>();
+        if (ghostCollider != null) ghostCollider.enabled = false;
+
+        // 고스트는 항상 초록색(Valid) 재질을 사용 (Opaque 권장)
+        if (ghostRenderer != null) ghostRenderer.material = validMaterial;
+    }
+
+    /// <summary>
+    /// 고스트 위치를 갱신하고, 피드백(마커/고스트 숨김)을 처리합니다.
+    /// </summary>
+    void UpdateGhostPositionAndFeedback()
+    {
+        if (Mouse.current == null) return;
+
         Vector2 mousePosition = Mouse.current.position.ReadValue();
         Ray ray = Camera.main.ScreenPointToRay(mousePosition);
         RaycastHit hit;
@@ -76,37 +139,102 @@ public class BuildingPlacer : MonoBehaviour
         if (Physics.Raycast(ray, out hit, 1000f, groundLayerMask))
         {
             currentGridPos = gridManager.WorldToGridPosition(hit.point);
-            Vector3 snappedWorldPos = gridManager.GridToWorldPosition(currentGridPos);
-            ghostBuilding.transform.position = snappedWorldPos;
 
-            // --- 2. 유효성 검사 및 '그린/레드' 피드백 ---
-            isCurrentPosValid = gridManager.IsPlacementValid(currentGridPos);
+            // 피봇 Y좌표 계산
+            Vector3 cornerPos = gridManager.GridToWorldPosition_BottomLeft(currentGridPos);
+            Vector3 pivotOffset = new Vector3(
+                (currentBuildingSize.x * gridManager.gridSize) / 2.0f,
+                currentBuildingHeight / 2.0f, // 건물 실제 높이의 절반
+                (currentBuildingSize.y * gridManager.gridSize) / 2.0f
+            );
 
+            // 계산된 최종 위치를 저장
+            currentSnappedWorldPos = cornerPos + pivotOffset;
+            ghostBuilding.transform.position = currentSnappedWorldPos;
+
+            // 유효성 검사
+            List<Vector2Int> invalidCells = gridManager.GetInvalidCells(currentGridPos, currentBuildingSize);
+            isCurrentPlacementValid = (invalidCells.Count == 0);
+
+            // --- [핵심 수정 1] ---
+            // '고스트'를 숨기는 로직을 제거하고, 항상 보이도록 합니다.
             if (ghostRenderer != null)
             {
-                ghostRenderer.material = isCurrentPosValid ? validMaterial : invalidMaterial;
+                ghostRenderer.enabled = true;
             }
-
-            // --- 3. 배치 확정 (마우스 좌클릭) ---
-            if (isCurrentPosValid && Mouse.current.leftButton.wasPressedThisFrame)
-            {
-                PlaceBuilding();
-            }
+            // '부분적 레드 마커'를 항상 갱신합니다.
+            ShowGridMarkers(invalidCells);
+            // --------------------
         }
     }
 
+    /// <summary>
+    /// '부분적 레드 마커'를 표시합니다.
+    /// </summary>
+    void ShowGridMarkers(List<Vector2Int> invalidCells)
+    {
+        // 1. 모든 마커 숨김
+        foreach (GameObject marker in gridMarkers)
+        {
+            marker.SetActive(false);
+        }
+
+        // 2. 필요한 만큼 마커 재활용/생성 해서 배치
+        for (int i = 0; i < invalidCells.Count; i++)
+        {
+            GameObject marker;
+            if (i < gridMarkers.Count)
+            {
+                marker = gridMarkers[i];
+            }
+            else
+            {
+                marker = Instantiate(gridMarkerPrefab);
+                gridMarkers.Add(marker);
+            }
+
+            Vector3 markerPos = gridManager.GridToWorldPosition_BottomLeft(invalidCells[i]);
+            markerPos.x += gridManager.gridSize / 2.0f;
+            markerPos.z += gridManager.gridSize / 2.0f;
+
+            // --- [핵심 수정!] ---
+            // 쿼드(마커)의 높이를 (바닥 높이 + 0.01f) + (현재 건물 높이)로 설정합니다.
+            // 예: 0.51f + 1.0f = 1.51f
+            markerPos.y = (gridManager.transform.position.y + 0.01f) + currentBuildingHeight;
+            // --------------------
+
+            marker.transform.position = markerPos;
+            marker.SetActive(true);
+        }
+    }
+
+    /// <summary>
+    /// 실제 건물을 배치합니다.
+    /// </summary>
     void PlaceBuilding()
     {
-        // 1. 실제 건물 생성
-        Vector3 worldPos = gridManager.GridToWorldPosition(currentGridPos);
-        Instantiate(buildingPrefab_Test, worldPos, Quaternion.identity);
-
-        // 2. [중요] 그리드 데이터를 '차있음'으로 업데이트
-        gridManager.SetGridOccupied(currentGridPos, true);
-
-        // 3. 고스트 파괴 및 배치 모드 종료
-        Destroy(ghostBuilding);
-        ghostBuilding = null;
-        ghostRenderer = null;
+        Instantiate(currentPrefabToBuild, currentSnappedWorldPos, Quaternion.identity);
+        gridManager.SetGridOccupied(currentGridPos, currentBuildingSize, true);
+        StopPlacing();
     }
+
+    /// <summary>
+    /// 배치 모드를 종료하고 모든 임시 오브젝트를 정리합니다.
+    /// </summary>
+    void StopPlacing()
+    {
+        if (ghostBuilding != null) Destroy(ghostBuilding);
+        ghostBuilding = null;
+        currentPrefabToBuild = null;
+        isCurrentPlacementValid = false;
+
+        foreach (GameObject marker in gridMarkers)
+        {
+            marker.SetActive(false);
+        }
+    }
+
+    #endregion
 }
+
+
