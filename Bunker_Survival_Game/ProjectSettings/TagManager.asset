@@ -5,7 +5,6 @@ TagManager:
   serializedVersion: 3
   tags:
   - Wall
-  - Sleep
   - Hygiene
   - Society
   - Toilet
@@ -14,6 +13,7 @@ TagManager:
   - Ground
   - Breakable
   - Energy
+  - Social
   layers:
   - Default
   - TransparentFX

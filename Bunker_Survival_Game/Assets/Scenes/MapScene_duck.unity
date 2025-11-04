@@ -176,7 +176,7 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 2814db099f82b3c48a8d5b8c3fb147e0, type: 3}
---- !u!1001 &362749371
+--- !u!1001 &364349910
 PrefabInstance:
   m_ObjectHideFlags: 0
   serializedVersion: 2
@@ -186,23 +186,19 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 12416499218361433, guid: 62722e1d2b6e10a4e852de1a4085329e, type: 3}
       propertyPath: m_Name
-      value: Bed (2)
-      objectReference: {fileID: 0}
-    - target: {fileID: 12416499218361433, guid: 62722e1d2b6e10a4e852de1a4085329e, type: 3}
-      propertyPath: m_TagString
-      value: Sleep
+      value: Bed
       objectReference: {fileID: 0}
     - target: {fileID: 8462806393122067544, guid: 62722e1d2b6e10a4e852de1a4085329e, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 15.212662
+      value: 16.65839
       objectReference: {fileID: 0}
     - target: {fileID: 8462806393122067544, guid: 62722e1d2b6e10a4e852de1a4085329e, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 1
+      value: 9.77309
       objectReference: {fileID: 0}
     - target: {fileID: 8462806393122067544, guid: 62722e1d2b6e10a4e852de1a4085329e, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 4.532402
+      value: -30.36248
       objectReference: {fileID: 0}
     - target: {fileID: 8462806393122067544, guid: 62722e1d2b6e10a4e852de1a4085329e, type: 3}
       propertyPath: m_LocalRotation.w
@@ -1384,63 +1380,6 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 2376346636557022414, guid: 4e48434d18cdd0042bb71969895c8ce2, type: 3}
   m_PrefabInstance: {fileID: 2501129040426103678}
   m_PrefabAsset: {fileID: 0}
---- !u!1001 &2142286833
-PrefabInstance:
-  m_ObjectHideFlags: 0
-  serializedVersion: 2
-  m_Modification:
-    serializedVersion: 3
-    m_TransformParent: {fileID: 0}
-    m_Modifications:
-    - target: {fileID: 12416499218361433, guid: 62722e1d2b6e10a4e852de1a4085329e, type: 3}
-      propertyPath: m_Name
-      value: Bed (1)
-      objectReference: {fileID: 0}
-    - target: {fileID: 8462806393122067544, guid: 62722e1d2b6e10a4e852de1a4085329e, type: 3}
-      propertyPath: m_LocalPosition.x
-      value: -30.47473
-      objectReference: {fileID: 0}
-    - target: {fileID: 8462806393122067544, guid: 62722e1d2b6e10a4e852de1a4085329e, type: 3}
-      propertyPath: m_LocalPosition.y
-      value: 1.000001
-      objectReference: {fileID: 0}
-    - target: {fileID: 8462806393122067544, guid: 62722e1d2b6e10a4e852de1a4085329e, type: 3}
-      propertyPath: m_LocalPosition.z
-      value: -40.411472
-      objectReference: {fileID: 0}
-    - target: {fileID: 8462806393122067544, guid: 62722e1d2b6e10a4e852de1a4085329e, type: 3}
-      propertyPath: m_LocalRotation.w
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 8462806393122067544, guid: 62722e1d2b6e10a4e852de1a4085329e, type: 3}
-      propertyPath: m_LocalRotation.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8462806393122067544, guid: 62722e1d2b6e10a4e852de1a4085329e, type: 3}
-      propertyPath: m_LocalRotation.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8462806393122067544, guid: 62722e1d2b6e10a4e852de1a4085329e, type: 3}
-      propertyPath: m_LocalRotation.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8462806393122067544, guid: 62722e1d2b6e10a4e852de1a4085329e, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8462806393122067544, guid: 62722e1d2b6e10a4e852de1a4085329e, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8462806393122067544, guid: 62722e1d2b6e10a4e852de1a4085329e, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 0
-      objectReference: {fileID: 0}
-    m_RemovedComponents: []
-    m_RemovedGameObjects: []
-    m_AddedGameObjects: []
-    m_AddedComponents: []
-  m_SourcePrefab: {fileID: 100100000, guid: 62722e1d2b6e10a4e852de1a4085329e, type: 3}
 --- !u!1 &2145492909
 GameObject:
   m_ObjectHideFlags: 0
@@ -1584,6 +1523,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 345819501373837154, guid: c7cb2344275def449a3f15de81f09685, type: 3}
+      propertyPath: npcRationRules.Array.size
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 1306947922284880153, guid: c7cb2344275def449a3f15de81f09685, type: 3}
       propertyPath: m_Name
       value: Tv
@@ -1690,67 +1633,6 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: e5c79f640c8f5c347b1f6b2afda0ee05, type: 3}
---- !u!1001 &2106909972713996740
-PrefabInstance:
-  m_ObjectHideFlags: 0
-  serializedVersion: 2
-  m_Modification:
-    serializedVersion: 3
-    m_TransformParent: {fileID: 0}
-    m_Modifications:
-    - target: {fileID: 12416499218361433, guid: 62722e1d2b6e10a4e852de1a4085329e, type: 3}
-      propertyPath: m_Name
-      value: Bed
-      objectReference: {fileID: 0}
-    - target: {fileID: 12416499218361433, guid: 62722e1d2b6e10a4e852de1a4085329e, type: 3}
-      propertyPath: m_TagString
-      value: Untagged
-      objectReference: {fileID: 0}
-    - target: {fileID: 8462806393122067544, guid: 62722e1d2b6e10a4e852de1a4085329e, type: 3}
-      propertyPath: m_LocalPosition.x
-      value: -39.67
-      objectReference: {fileID: 0}
-    - target: {fileID: 8462806393122067544, guid: 62722e1d2b6e10a4e852de1a4085329e, type: 3}
-      propertyPath: m_LocalPosition.y
-      value: 1.07
-      objectReference: {fileID: 0}
-    - target: {fileID: 8462806393122067544, guid: 62722e1d2b6e10a4e852de1a4085329e, type: 3}
-      propertyPath: m_LocalPosition.z
-      value: 40.32
-      objectReference: {fileID: 0}
-    - target: {fileID: 8462806393122067544, guid: 62722e1d2b6e10a4e852de1a4085329e, type: 3}
-      propertyPath: m_LocalRotation.w
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 8462806393122067544, guid: 62722e1d2b6e10a4e852de1a4085329e, type: 3}
-      propertyPath: m_LocalRotation.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8462806393122067544, guid: 62722e1d2b6e10a4e852de1a4085329e, type: 3}
-      propertyPath: m_LocalRotation.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8462806393122067544, guid: 62722e1d2b6e10a4e852de1a4085329e, type: 3}
-      propertyPath: m_LocalRotation.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8462806393122067544, guid: 62722e1d2b6e10a4e852de1a4085329e, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8462806393122067544, guid: 62722e1d2b6e10a4e852de1a4085329e, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8462806393122067544, guid: 62722e1d2b6e10a4e852de1a4085329e, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 0
-      objectReference: {fileID: 0}
-    m_RemovedComponents: []
-    m_RemovedGameObjects: []
-    m_AddedGameObjects: []
-    m_AddedComponents: []
-  m_SourcePrefab: {fileID: 100100000, guid: 62722e1d2b6e10a4e852de1a4085329e, type: 3}
 --- !u!1001 &2501129040426103678
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -2063,6 +1945,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Floor
       objectReference: {fileID: 0}
+    - target: {fileID: 273391115316860550, guid: 6d90b00532f425e40a714963c3a09220, type: 3}
+      propertyPath: m_TagString
+      value: Breakable
+      objectReference: {fileID: 0}
     - target: {fileID: 7022520973433024650, guid: 6d90b00532f425e40a714963c3a09220, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
@@ -2173,7 +2059,6 @@ SceneRoots:
   - {fileID: 716434670}
   - {fileID: 7879808797274958950}
   - {fileID: 548301027510755649}
-  - {fileID: 2106909972713996740}
   - {fileID: 1810439500197057974}
   - {fileID: 5232233605256955065}
   - {fileID: 4601715183207410446}
@@ -2189,11 +2074,10 @@ SceneRoots:
   - {fileID: 9139906841567391727}
   - {fileID: 517983327}
   - {fileID: 1661926107}
-  - {fileID: 2142286833}
   - {fileID: 231331135}
   - {fileID: 635117283}
   - {fileID: 1575272420}
   - {fileID: 1461253127}
   - {fileID: 1540144729}
   - {fileID: 499296482}
-  - {fileID: 362749371}
+  - {fileID: 364349910}
