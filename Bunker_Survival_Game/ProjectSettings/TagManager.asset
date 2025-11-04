@@ -11,8 +11,9 @@ TagManager:
   - Toilet
   - Fun
   - Hunger
-  - Energy
   - Ground
+  - Breakable
+  - Energy
   layers:
   - Default
   - TransparentFX

@@ -15,7 +15,7 @@ GameObject:
   - component: {fileID: 7233113545159052685}
   m_Layer: 0
   m_Name: Bed
-  m_TagString: Untagged
+  m_TagString: Energy
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -125,3 +125,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Building
   size: {x: 1, y: 1}
+  height: 1
+  providesNeedTag: 
+  baseSatisfaction: 20
+  qualityMultiplier: 1
+  isAffectedByEvent: 1
+  satisfactionDuringEvent: 0
