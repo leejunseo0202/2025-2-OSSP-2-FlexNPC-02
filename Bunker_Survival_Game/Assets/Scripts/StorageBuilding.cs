@@ -5,7 +5,7 @@ using System; // [Serializable]을 위해 추가
 
 /// <summary>
 /// "부모" Building을 상속받는 '저장고' 타입 건물입니다. (예: 정수기, 자판기)
-/// [수정됨] NPC에게 '다중 수치 조정' 목록을 반환합니다.
+/// [수정됨] NPC별로 "1회당 소모량"이 다릅니다. (누적 캡 아님)
 /// </summary>
 public class StorageBuilding : Building // Building을 상속!
 {
@@ -15,94 +15,75 @@ public class StorageBuilding : Building // Building을 상속!
     public List<NeedModification> needEffects;
 
     [Header("4. 재고 (Storage)")]
-    [Tooltip("최대 재고량 (예: 200.0)")]
+    [Tooltip("최대 재고량 (예: 100.0)")]
     public float maxStock = 100.0f;
-    [Tooltip("현재 재고량 (정수기에 남은 물의 총 양)")]
+    [Tooltip("현재 재고량")]
     public float currentStock = 100.0f;
-    [Tooltip("1회 사용 시 '재고'에서 차감할 양 (이 값은 NPC 요청량과 무관)")]
-    public float stockConsumedPerUse = 1.0f; // (예: 자판기 1회 사용 시 재고 1 차감)
 
-    [Header("5. NPC별 누적 총량 캡 (Local Rules)")]
-    [Tooltip("이 *특정 건물*이 각 NPC에게 허용하는 *누적 총량 캡* 목록입니다.")]
-    public List<NpcRationRule> npcRationRules;
-    [Tooltip("위 목록에 *없는* NPC에게 적용할 기본 *누적 총량 캡*")]
-    public float defaultCap = 50.0f;
+    // [삭제됨] stockConsumedPerUse (아래 목록으로 대체됨)
+
+    // --- [핵심 수정!] ---
+    [Header("5. NPC별 1회당 소모량 (Local Rules)")]
+    [Tooltip("이 *특정 건물*이 각 NPC에게서 *1회 사용 시 차감*할 재고량입니다.")]
+    public List<NpcConsumptionRule> npcConsumptionRules;
+    [Tooltip("위 목록에 *없는* NPC에게서 차감할 기본 재고량")]
+    public float defaultConsumption = 1.0f;
 
     [System.Serializable]
-    public class NpcRationRule
+    public class NpcConsumptionRule
     {
         [Tooltip("NpcAI.cs에 정의된 NPC의 고유 ID (예: Human_A, Human_B)")]
         public string npcId;
-        [Tooltip("이 *건물*이 이 *NPC*에게만 허용하는 *누적 총량 캡* (예: 40)")]
-        public float amountCap; // (예: 40)
+        [Tooltip("이 NPC가 1회 사용 시 '재고(Stock)'에서 소모시키는 양 (예: 20)")]
+        public float amountConsumedPerUse; // (예: 20)
     }
     // ------------------------------------
 
-    // 이 건물이 NPC별로 "지금까지 총 얼마를 줬는지" 기억하는 장부
-    private Dictionary<string, float> npcUsageTracker = new Dictionary<string, float>();
+    // [삭제됨] npcUsageTracker (누적 캡 장부)
     // ------------------------------------
 
 
     /// <summary>
-    /// [핵심] 부모(Building)의 'UseBuilding' 함수를 '저장고' 방식대로 구현(override)합니다.
+    /// [핵심] 부모(Building)의 'UseBuilding' 함수를 "1회당 차등 소모" 방식대로 구현(override)합니다.
     /// </summary>
     public override List<NeedModification> UseBuilding(string npcId, float amountRequested)
     {
-        // 1. 건물이 작동 중이 아니거나, 재고가 없으면 (실패)
-        if (!isFunctioning || currentStock <= 0)
+        // 1. 건물이 작동 중이 아니면 (실패)
+        if (!isFunctioning)
         {
             return new List<NeedModification>(); // 빈 리스트 반환
         }
 
-        // 2. 이 NPC의 '누적 총량 캡'을 찾음 (예: 40)
-        float totalCap = GetCapForNpc(npcId);
+        // 2. 이 NPC("Human_A")의 "1회당 소모량"을 찾음 (예: 20)
+        float amountToConsume = GetConsumptionForNpc(npcId);
 
-        // 3. 이 NPC가 '지금까지 가져간 총량'을 장부(Tracker)에서 찾음
-        float amountAlreadyTaken = 0f;
-        if (npcUsageTracker.ContainsKey(npcId))
-        {
-            amountAlreadyTaken = npcUsageTracker[npcId];
-        }
-
-        // 4. 이 NPC에게 '남아있는 캡'을 계산
-        float remainingCap = totalCap - amountAlreadyTaken;
-
-        // 4a. 이미 캡을 다 채웠으면 (실패)
-        if (remainingCap <= 0)
-        {
-            return new List<NeedModification>(); // 빈 리스트 반환
-        }
-
-        // 5. NPC의 '요청량'(예: 10)과 '남은 캡'(예: 40) 중 더 작은 값을 선택
-        // (이 값은 이제 '재고'가 아닌 '누적 캡' 계산에만 사용됩니다)
-        float capConsumed = Mathf.Min(amountRequested, remainingCap);
-
-        // 6. 실제 재고(Stock)가 1회 사용량보다 적은지 확인
-        if (currentStock < stockConsumedPerUse)
+        // 3. 건물의 '현재 재고'가 '1회당 소모량'보다 적은지 확인
+        if (currentStock < amountToConsume)
         {
             return new List<NeedModification>(); // 재고 부족 (실패)
         }
 
-        // 7. [성공!] 모든 검사 통과
-        currentStock -= stockConsumedPerUse; // 건물 재고 차감
-        npcUsageTracker[npcId] = amountAlreadyTaken + capConsumed; // NPC 장부 갱신
+        // 4. [성공!] 모든 검사 통과
+        currentStock -= amountToConsume; // 건물 재고에서 "1회당 소모량" 차감
 
+        // NPC가 요청한 'amountRequested' 값은 이 로직에서 무시됩니다.
+        // 건물은 단지 NPC에게 "효과 목록"만 반환합니다.
         return needEffects; // "성공했으니 [Fun+20, Energy-20] 효과를 받아라"
     }
 
     /// <summary>
-    /// [헬퍼 함수] NPC 'ID'에 맞는 '*누적 총량 캡*'을 목록에서 찾아 반환
+    /// [헬퍼 함수 - 수정됨] NPC 'ID'에 맞는 "1회당 소모량"을 목록에서 찾아 반환
     /// </summary>
-    private float GetCapForNpc(string npcId)
+    private float GetConsumptionForNpc(string npcId)
     {
-        var rule = npcRationRules.Find(r => r.npcId == npcId);
+        var rule = npcConsumptionRules.Find(r => r.npcId == npcId);
         if (rule != null)
         {
-            return rule.amountCap; // 찾았으면 해당 값 반환 (예: 40.0)
+            return rule.amountConsumedPerUse; // 찾았으면 해당 값 반환 (예: 20.0)
         }
         else
         {
-            return defaultCap; // 못 찾았으면 기본값 반환 (예: 50.0)
+            return defaultConsumption; // 못 찾았으면 기본값 반환 (예: 1.0)
         }
     }
 }
