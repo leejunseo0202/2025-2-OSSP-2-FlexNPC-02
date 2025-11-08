@@ -30,7 +30,7 @@ public static class GameDefinitions
         [Tooltip("건물이 작동하기 위해 필요한 자원 태그 (예: 물)")]
         public const string Water = "Water";
         [Tooltip("정수기/자판기 등이 저장하는 자원 태그 (예: 식량)")]
-        public const string Food = "Food"; // "Hunger" 욕구와 맵핑됨
+        public const string Food = "Food"; 
     }
 
     /// <summary>
