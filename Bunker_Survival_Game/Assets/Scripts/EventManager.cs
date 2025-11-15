@@ -4,30 +4,61 @@ using System.Collections.Generic;
 
 /// <summary>
 /// "단전", "단수", "방화벽" 등 벙커의 위기 이벤트를 관리하고 발동시킵니다.
-/// (테스트용 키보드 입력을 포함합니다)
+/// [수정됨] "ID"를 기반으로 개별 방화벽을 제어합니다.
 /// </summary>
 public class EventManager : MonoBehaviour
 {
-    [Header("3번 기능: 방화벽/셔터")]
-    [Tooltip("방화벽(셔터)의 Animator 컴포넌트를 연결하세요.")]
-    public Animator shutterAnimator;
+    // --- [핵심] ---
+    // 맵에 있는 모든 방화벽을 'ID'로 찾아 빠르게 접근하기 위한 '전화번호부' (Dictionary)
+    // 이 스크립트가 작동하려면, 각 방화벽 오브젝트에 'Firewall.cs' 스크립트가 붙어있어야 합니다.
+    private Dictionary<string, Firewall> firewallRegistry = new Dictionary<string, Firewall>();
 
-    [Tooltip("방화벽이 닫혔을 때 NPC의 길을 막을 '물리적 장애물' 오브젝트 (예: Box Collider)")]
-    public GameObject shutterBlocker;
+    // 각 방화벽의 현재 닫힘/열림 상태를 기억
+    private Dictionary<string, bool> firewallStates = new Dictionary<string, bool>();
+    // --- [여기까지] ---
+
 
     // --- 이벤트 현재 상태 ---
     private bool isPowerOut = false;    // 현재 정전 상태인가?
     private bool isWaterOut = false;    // 현재 단수 상태인가?
-    private bool isShutterClosed = false; // 현재 셔터가 닫혔나?
 
     void Start()
     {
-        // 시작 시: 모든 것이 정상 상태
-        if (shutterBlocker != null)
+        // [수정됨] 시작 시 맵의 모든 'Firewall'을 찾아 '전화번호부'에 등록
+        RegisterAllFirewalls();
+    }
+
+    /// <summary>
+    /// 맵에 있는 모든 'Firewall' 스크립트를 찾아 '전화번호부'(Registry)에 등록합니다.
+    /// </summary>
+    private void RegisterAllFirewalls()
+    {
+        // 1. 맵의 모든 Firewall 컴포넌트를 찾습니다.
+        // (CS0618 경고는 님의 환경에 맞추기 위해 의도된 것입니다)
+        Firewall[] allFirewalls = FindObjectsOfType<Firewall>();
+
+        foreach (Firewall fw in allFirewalls)
         {
-            shutterBlocker.SetActive(false); // 길막기 비활성화
+            if (string.IsNullOrEmpty(fw.firewallId))
+            {
+                UnityEngine.Debug.LogError($"'{fw.gameObject.name}'에 firewallId가 없어 등록에 실패했습니다.", fw.gameObject);
+                continue;
+            }
+
+            if (firewallRegistry.ContainsKey(fw.firewallId))
+            {
+                UnityEngine.Debug.LogError($"'{fw.firewallId}' ID가 중복되었습니다! 맵에 동일한 ID의 방화벽이 2개 이상 있습니다.", fw.gameObject);
+            }
+            else
+            {
+                // 2. 전화번호부와 상태 사전에 등록
+                firewallRegistry.Add(fw.firewallId, fw);
+                firewallStates.Add(fw.firewallId, false); // 'false' = 열림(Open) 상태로 시작
+                fw.Open(); // 시작 시 항상 열어둠
+            }
         }
     }
+
 
     void Update()
     {
@@ -39,8 +70,6 @@ public class EventManager : MonoBehaviour
         {
             isPowerOut = !isPowerOut; // 상태 뒤집기
             TriggerEvent(GameDefinitions.EventType.PowerOutage, !isPowerOut);
-
-            // [수정됨: CS0104 에러 해결]
             UnityEngine.Debug.Log(isPowerOut ? "--- [이벤트] 정전 발생! ---" : "--- [이벤트] 전력 복구됨 ---");
         }
 
@@ -49,39 +78,32 @@ public class EventManager : MonoBehaviour
         {
             isWaterOut = !isWaterOut; // 상태 뒤집기
             TriggerEvent(GameDefinitions.EventType.WaterOutage, !isWaterOut);
-
-            // [수정됨: CS0104 에러 해결]
             UnityEngine.Debug.Log(isWaterOut ? "--- [이벤트] 단수 발생! ---" : "--- [이벤트] 급수 복구됨 ---");
         }
 
-        // F9키: 방화벽 (Toggle)
+        // --- [수정됨] F9키: "Firewall_A" 방화벽만 개별 제어 (Toggle) ---
         if (Keyboard.current[Key.F9].wasPressedThisFrame)
         {
-            isShutterClosed = !isShutterClosed; // 상태 뒤집기
-            TriggerShutter(isShutterClosed);
+            // ID "Firewall_A"를 가진 방화벽만 토글
+            ToggleSpecificShutter("Firewall_A");
+        }
 
-            // [수정됨: CS0104 에러 해결]
-            UnityEngine.Debug.Log(isShutterClosed ? "--- [이벤트] 방화벽 작동! ---" : "--- [이벤트] 방화벽 개방됨 ---");
+        // --- [추가됨] F10키: "Firewall_B" 방화벽만 개별 제어 (Toggle) ---
+        if (Keyboard.current[Key.F10].wasPressedThisFrame)
+        {
+            // ID "Firewall_B"를 가진 방화벽만 토글
+            ToggleSpecificShutter("Firewall_B");
         }
     }
 
     /// <summary>
     /// 1. 정전 / 2. 단수 이벤트를 발동시킵니다.
-    /// 맵의 모든 'Building' 자식 스크립트를 찾아 상태를 변경합니다.
+    /// (Building 스크립트들에게 방송)
     /// </summary>
-    /// <param name="eventType">GameDefinitions에 정의된 이벤트 타입</param>
-    /// <param name="isActive">이벤트가 끝났는지(true), 시작됐는지(false)</param>
     public void TriggerEvent(string eventType, bool isActive)
     {
-        // 1. 맵에 있는 모든 'Building' (부모) 컴포넌트를 찾습니다.
-
-        // --- [수정됨: CS0103 에러를 해결하기 위해 구버전 함수로 복귀] ---
-        // 'FindObjectsByType' (신버전)이 님의 환경에서 CS0103 에러를 유발하므로,
-        // (CS0618 'obsolete' 경고가 뜨더라도) 이전 버전인 'FindObjectsOfType'을 사용합니다.
+        // (CS0618 경고는 님의 환경에 맞추기 위해 의도된 것입니다)
         Building[] allBuildings = FindObjectsOfType<Building>();
-        // --- [여기까지] ---
-
-        // 2. 모든 건물에게 이벤트를 '방송(Broadcast)'합니다.
         foreach (Building building in allBuildings)
         {
             building.HandleEvent(eventType, isActive);
@@ -89,24 +111,38 @@ public class EventManager : MonoBehaviour
     }
 
     /// <summary>
-    /// 3. 방화벽(셔터) 이벤트를 발동시킵니다.
+    /// [수정됨] 3. '특정 ID'의 방화벽(셔터)을 토글(Toggle)합니다.
+    /// (개별 Firewall 스크립트에게 명령)
     /// </summary>
-    /// <param name="isClosed">셔터를 닫을지(true) 열지(false)</param>
-    public void TriggerShutter(bool isClosed)
+    /// <param name="firewallId">제어할 방화벽의 고유 ID</param>
+    public void ToggleSpecificShutter(string firewallId)
     {
-        // 1. (연출) Animator의 "isClosed" 파라미터를 변경하여 애니메이션 재생
-        if (shutterAnimator != null)
+        // 1. '전화번호부'에 이 ID가 등록되어 있는지 확인
+        if (!firewallRegistry.ContainsKey(firewallId))
         {
-            shutterAnimator.SetBool("isClosed", isClosed);
+            UnityEngine.Debug.LogWarning($"'{firewallId}' ID를 가진 방화벽을 찾을 수 없습니다!");
+            return;
         }
 
-        // 2. (기능) NPC의 길을 막는 물리적 장애물(콜라이더)을 활성화/비활성화
-        if (shutterBlocker != null)
-        {
-            shutterBlocker.SetActive(isClosed);
+        // 2. 현재 상태를 가져오고, 뒤집습니다.
+        bool currentStateIsClosed = firewallStates[firewallId];
+        bool newStateIsClosed = !currentStateIsClosed;
 
-            // (팁: 이 'shutterBlocker'는 NPC의 NavMesh(길찾기)에도
-            // '장애물'로 인식되도록 설정해야 합니다.)
+        // 3. '전화번호부'에서 실제 방화벽 오브젝트를 찾습니다.
+        Firewall firewallToToggle = firewallRegistry[firewallId];
+
+        // 4. 새 상태에 따라 '명령'을 내립니다.
+        if (newStateIsClosed)
+        {
+            firewallToToggle.Close();
         }
+        else
+        {
+            firewallToToggle.Open();
+        }
+
+        // 5. 새 상태를 저장합니다.
+        firewallStates[firewallId] = newStateIsClosed;
+        UnityEngine.Debug.Log($"--- [이벤트] 방화벽 '{firewallId}' 작동! (새 상태: {newStateIsClosed}) ---");
     }
 }
