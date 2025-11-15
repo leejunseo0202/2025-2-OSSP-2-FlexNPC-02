@@ -12,10 +12,10 @@ GameObject:
   - component: {fileID: 5743570016915373534}
   - component: {fileID: 2145037370519965716}
   - component: {fileID: 5081424500877697130}
-  - component: {fileID: 1122538427373205590}
+  - component: {fileID: 7638475840102756590}
   m_Layer: 0
   m_Name: WashStand
-  m_TagString: Untagged
+  m_TagString: Hygiene
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -112,7 +112,7 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 1, y: 1, z: 1}
   m_Center: {x: 0, y: 0, z: 0}
---- !u!114 &1122538427373205590
+--- !u!114 &7638475840102756590
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -121,17 +121,19 @@ MonoBehaviour:
   m_GameObject: {fileID: 1342907786601609184}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a6c0ba140527d57448f67756dbd4ee5c, type: 3}
+  m_Script: {fileID: 11500000, guid: ab6dad9eadfd9dc4f86d6dbab3b9669e, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::SimpleBuilding
-  buildingName: WashStand
+  m_EditorClassIdentifier: Assembly-CSharp::StorageBuilding
+  buildingName: WaterStand
   size: {x: 1, y: 1}
   height: 1
-  requiredResourceTag: 
-  requiresResourceToFunction: 0
+  requiredResourceTag: Water
+  requiresResourceToFunction: 1
   isFunctioning: 1
   needEffects:
   - needTag: Hygeine
     amount: 10
-  npcSatisfactionRules: []
-  defaultSatisfaction: 10
+  maxStock: 100
+  currentStock: 100
+  npcConsumptionRules: []
+  defaultConsumption: 10
