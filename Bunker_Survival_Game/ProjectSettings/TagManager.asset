@@ -4,8 +4,16 @@
 TagManager:
   serializedVersion: 3
   tags:
-  - NPC
-  - Object
+  - Wall
+  - Hygiene
+  - Society
+  - Toilet
+  - Fun
+  - Hunger
+  - Ground
+  - Breakable
+  - Energy
+  - Social
   layers:
   - Default
   - TransparentFX
@@ -13,7 +21,7 @@ TagManager:
   - 
   - Water
   - UI
-  - 
+  - Ground
   - 
   - 
   - 
