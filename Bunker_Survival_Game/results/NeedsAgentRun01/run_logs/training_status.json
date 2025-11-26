@@ -1,0 +1,38 @@
+{
+    "NeedsAgentBehavior": {
+        "checkpoints": [
+            {
+                "steps": 499961,
+                "file_path": "results\\NeedsAgentRun01\\NeedsAgentBehavior\\NeedsAgentBehavior-499961.onnx",
+                "reward": 5.887370448774443,
+                "creation_time": 1764183928.7853756,
+                "auxillary_file_paths": [
+                    "results\\NeedsAgentRun01\\NeedsAgentBehavior\\NeedsAgentBehavior-499961.pt"
+                ]
+            },
+            {
+                "steps": 500161,
+                "file_path": "results\\NeedsAgentRun01\\NeedsAgentBehavior\\NeedsAgentBehavior-500161.onnx",
+                "reward": 5.887370448774443,
+                "creation_time": 1764183928.8957133,
+                "auxillary_file_paths": [
+                    "results\\NeedsAgentRun01\\NeedsAgentBehavior\\NeedsAgentBehavior-500161.pt"
+                ]
+            }
+        ],
+        "final_checkpoint": {
+            "steps": 500161,
+            "file_path": "results\\NeedsAgentRun01\\NeedsAgentBehavior.onnx",
+            "reward": 5.887370448774443,
+            "creation_time": 1764183928.8957133,
+            "auxillary_file_paths": [
+                "results\\NeedsAgentRun01\\NeedsAgentBehavior\\NeedsAgentBehavior-500161.pt"
+            ]
+        }
+    },
+    "metadata": {
+        "stats_format_version": "0.3.0",
+        "mlagents_version": "0.30.0",
+        "torch_version": "2.1.1+cpu"
+    }
+}
