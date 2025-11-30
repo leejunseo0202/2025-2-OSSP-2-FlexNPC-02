@@ -1,7 +1,9 @@
 using JetBrains.Annotations;
 using Unity.Burst.CompilerServices;
 using UnityEngine;
+using UnityEngine.AI;
 using UnityEngine.InputSystem;
+using UnityEngine.InputSystem.EnhancedTouch;
 using UnityEngine.UI;
 using static UnityEngine.EventSystems.EventTrigger;
 
@@ -11,10 +13,11 @@ public class UI_StatusNPC : MonoBehaviour
     public Image[] guageImage = new Image[6];
     public TMPro.TMP_Text npcNameText;
 
-    public Test selectedNPC = null;
+    public NPCAI_Utility_BehaviorTree selectedNPC = null;
     public Button[] npcButton;
     public TMPro.TMP_Text[] npcText;
-    public Test[] npclist;
+    public NPCAI_Utility_BehaviorTree[] npclist;
+    private NavMeshAgent navMesh;
 
     //UI 활성화 관련 변수
     public Animator animator;
@@ -35,19 +38,27 @@ public class UI_StatusNPC : MonoBehaviour
     void Start()
     {
         numberOfNPC = PlayerPrefs.GetInt("NumberOfNPC");
-        npclist = new Test[numberOfNPC + 1];
+        npclist = new NPCAI_Utility_BehaviorTree[numberOfNPC + 1];
 
         // NPC 수에 따라 NPC 생성
         for (int i=1; i <= numberOfNPC; i++)
         {
-            Vector3 spawnPoint = new Vector3(0 + i, (float)0.5, 0);
+            Vector3 spawnPoint = new Vector3((float)i * 1.5f, 1, 0);
 
             GameObject npcObj = GameObject.CreatePrimitive(PrimitiveType.Sphere);
             npcObj.name = "NPC" + i;
             npcObj.transform.position = spawnPoint;
 
             // Test 스크립트 컴포넌트 추가
-            Test newNpc = npcObj.AddComponent<Test>();
+            NPCAI_Utility_BehaviorTree newNpc = npcObj.AddComponent<NPCAI_Utility_BehaviorTree>();
+            NavMeshAgent navMesh              = npcObj.AddComponent<NavMeshAgent>();
+
+            // Spawn 위치가 NavMesh 위에 있는지 확인하고 Warp
+            NavMeshHit hit;
+            if (NavMesh.SamplePosition(spawnPoint, out hit, 5f, NavMesh.AllAreas))
+                navMesh.Warp(hit.position); //NavMesh 위로 이동
+            else
+                Debug.LogWarning(npcObj.name + " NavMesh위에 없음");
 
             npclist[i] = newNpc;
 
@@ -136,22 +147,26 @@ public class UI_StatusNPC : MonoBehaviour
         }
     }
 
-    private void UpdateGuage(Test npcStatus)
+    private void UpdateGuage(NPCAI_Utility_BehaviorTree npcStatus)
     {
         float[] statusValue = new float[6];
-        for (int i=0; i < guage.Length; i++)
+        statusValue[0] = npcStatus.hunger;
+        statusValue[1] = npcStatus.toilet;
+        statusValue[2] = npcStatus.social;
+        statusValue[3] = npcStatus.hygiene;
+        statusValue[4] = npcStatus.fun;
+        statusValue[5] = npcStatus.energy;
+        for (int i = 0; i < guage.Length; i++)
         {
-            statusValue[i] = npcStatus.NPCstatus[i];
-
-            float clamped = Mathf.Clamp(statusValue[i], 0, 100);
-            float newWidth = (clamped / 100f) * maxWidth;
+            float clamped = Mathf.Clamp(statusValue[i], 0.0f, 1.0f);
+            float newWidth = (clamped) * maxWidth;
 
             Vector2 size = guage[i].sizeDelta;
             size.x = Mathf.Lerp(size.x, newWidth, Time.deltaTime * 5f);
             guage[i].sizeDelta = size;
 
             if (guageImage[i] != null)
-                guageImage[i].color = Color.Lerp(Color.red, Color.green, clamped / 100f);
+                guageImage[i].color = Color.Lerp(Color.red, Color.green, clamped);
         }
     }
 }

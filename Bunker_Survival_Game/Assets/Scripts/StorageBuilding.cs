@@ -53,6 +53,9 @@ public class StorageBuilding : Building // Building을 상속!
         // 2. 이 NPC("Human_A")의 "1회당 소모량"을 찾음 (예: 20)
         int amountToConsume = (int)GetConsumptionForNpc(npcId);
 
+        Debug.Log($"npcId={npcId}, resourceType={resourceType}, requested={amountRequested}");
+        Debug.Log($"resourceManager Null? => {resourceManager == null}");
+        Debug.Log($"resourceManager.currentStock[resourceType] Null? => {resourceManager.currentStock[resourceType] == null}");
         // 3. 건물의 '현재 재고'가 '1회당 소모량'보다 적은지 확인
         if (resourceManager.currentStock[resourceType] < amountToConsume)
         {
