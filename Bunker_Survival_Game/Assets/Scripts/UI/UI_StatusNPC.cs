@@ -4,6 +4,7 @@ using UnityEngine;
 using UnityEngine.AI;
 using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.EnhancedTouch;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 using static UnityEngine.EventSystems.EventTrigger;
 
@@ -17,10 +18,12 @@ public class UI_StatusNPC : MonoBehaviour
     public Button[] npcButton;
     public TMPro.TMP_Text[] npcText;
     public NPCAI_Utility_BehaviorTree[] npclist;
+
     private NavMeshAgent navMesh;
 
     //UI 활성화 관련 변수
     public Animator animator;
+    public Animator animator_right;
     public Button openButton;
     public Button closeButton;
     public GameObject ui_SelectNPCGroup;
@@ -34,46 +37,59 @@ public class UI_StatusNPC : MonoBehaviour
 
     // 설정 버튼
     public Button settingButton;
-
+    public bool isRight = false;
     void Start()
     {
-        numberOfNPC = PlayerPrefs.GetInt("NumberOfNPC");
-        npclist = new NPCAI_Utility_BehaviorTree[numberOfNPC + 1];
 
-        // NPC 수에 따라 NPC 생성
-        for (int i=1; i <= numberOfNPC; i++)
+        if (SceneManager.GetActiveScene().name == "PlayScene")
         {
-            Vector3 spawnPoint = new Vector3((float)i * 1.5f, 1, 0);
+            numberOfNPC = PlayerPrefs.GetInt("NumberOfNPC");
+            npclist = new NPCAI_Utility_BehaviorTree[numberOfNPC + 1];
 
-            GameObject npcObj = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-            npcObj.name = "NPC" + i;
-            npcObj.transform.position = spawnPoint;
-
-            // Test 스크립트 컴포넌트 추가
-            NPCAI_Utility_BehaviorTree newNpc = npcObj.AddComponent<NPCAI_Utility_BehaviorTree>();
-            NavMeshAgent navMesh              = npcObj.AddComponent<NavMeshAgent>();
-
-            // Spawn 위치가 NavMesh 위에 있는지 확인하고 Warp
-            NavMeshHit hit;
-            if (NavMesh.SamplePosition(spawnPoint, out hit, 5f, NavMesh.AllAreas))
-                navMesh.Warp(hit.position); //NavMesh 위로 이동
-            else
-                Debug.LogWarning(npcObj.name + " NavMesh위에 없음");
-
-            npclist[i] = newNpc;
-
-            //버튼 활성화
-            if (npcButton != null && npcText != null)
+            // NPC 수에 따라 NPC 생성
+            for (int i = 1; i <= numberOfNPC; i++)
             {
-                npcButton[i].gameObject.SetActive(true);
-                npcText[i].gameObject.SetActive(true);
-                npcText[i].text = "NPC" + i;
+                Vector3 spawnPoint = new Vector3((float)i * 1.5f, 1, 0);
+
+                GameObject npcObj = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+                npcObj.name = "NPC" + i + "_ML_Agent";
+                npcObj.transform.position = spawnPoint;
+
+                // Test 스크립트 컴포넌트 추가
+                NPCAI_Utility_BehaviorTree newNpc = npcObj.AddComponent<NPCAI_Utility_BehaviorTree>();
+                NavMeshAgent navMesh = npcObj.AddComponent<NavMeshAgent>();
+
+                // Spawn 위치가 NavMesh 위에 있는지 확인하고 Warp
+                NavMeshHit hit;
+                if (NavMesh.SamplePosition(spawnPoint, out hit, 5f, NavMesh.AllAreas))
+                    navMesh.Warp(hit.position); //NavMesh 위로 이동
+                else
+                    Debug.LogWarning(npcObj.name + " NavMesh위에 없음");
+
+                npclist[i] = newNpc;
+
+                //버튼 활성화
+                if (npcButton != null && npcText != null)
+                {
+                    npcButton[i].gameObject.SetActive(true);
+                    npcText[i].gameObject.SetActive(true);
+                    npcText[i].text = "NPC" + i;
+                }
             }
+
         }
 
-        for (int i= 0; i < guage.Length; i++)
+        if (SceneManager.GetActiveScene().name == "Compare_NPC_AI")
+        {
+            //버튼 활성화
+            npcButton[1].gameObject.SetActive(true);
+            npcText[1].gameObject.SetActive(true);
+            npcText[1].text = "NPC" + 1;
+        }
+
+        for (int i = 0; i < guage.Length; i++)
             if (guageImage[i] == null && guage[i] != null)
-                guageImage[i] = guage[i].GetComponent<Image>();    
+                guageImage[i] = guage[i].GetComponent<Image>();
     }
 
     void Update()
@@ -84,8 +100,31 @@ public class UI_StatusNPC : MonoBehaviour
         if (Keyboard.current.digit3Key.wasPressedThisFrame && numberOfNPC >= 3 && !shift) SelectNPC(3);
         if (Keyboard.current.digit4Key.wasPressedThisFrame && numberOfNPC >= 4 && !shift) SelectNPC(4);
 
-        // back키
-        if (Keyboard.current.bKey.wasPressedThisFrame && ui_ShowGuageGroup.activeSelf)
+        if (SceneManager.GetActiveScene().name == "Compare_NPC_AI")
+        {
+            if (Keyboard.current.digit1Key.wasPressedThisFrame && !shift && !isRight) SelectNPC(1);
+            if (Keyboard.current.digit2Key.wasPressedThisFrame && !shift && !isRight) SelectNPC(2);
+            if (Keyboard.current.digit3Key.wasPressedThisFrame && !shift && !isRight) SelectNPC(3);
+            if (Keyboard.current.digit4Key.wasPressedThisFrame && !shift && !isRight) SelectNPC(4);
+
+            if (Keyboard.current.digit1Key.wasPressedThisFrame && shift && isRight) SelectNPC(1);
+            if (Keyboard.current.digit2Key.wasPressedThisFrame && shift && isRight) SelectNPC(2);
+            if (Keyboard.current.digit3Key.wasPressedThisFrame && shift && isRight) SelectNPC(3);
+            if (Keyboard.current.digit4Key.wasPressedThisFrame && shift && isRight) SelectNPC(4);
+
+            // back키
+            if (Keyboard.current.bKey.wasPressedThisFrame && ui_ShowGuageGroup.activeSelf && shift && isRight)
+            {
+                if (ui_SelectNPCGroup != null)
+                    ui_SelectNPCGroup.SetActive(true);
+
+                if (ui_ShowGuageGroup != null)
+                    ui_ShowGuageGroup.SetActive(false);
+            }
+        }
+
+            // back키
+        if (Keyboard.current.bKey.wasPressedThisFrame && ui_ShowGuageGroup.activeSelf && !isRight)
         {
             if (ui_SelectNPCGroup != null)
                 ui_SelectNPCGroup.SetActive(true);
@@ -95,7 +134,22 @@ public class UI_StatusNPC : MonoBehaviour
         }
 
         // left 키를 눌러 NPC Status 열기/닫기 토글
-        if (Keyboard.current.leftArrowKey.wasPressedThisFrame)
+        if (!isRight && Keyboard.current.leftArrowKey.wasPressedThisFrame)
+        {
+            if (ui_Open)
+            {
+                closeButton.onClick.Invoke();
+                ui_Open = false;
+            }
+            else
+            {
+                openButton.onClick.Invoke();
+                ui_Open = true;
+            }
+        }
+
+        // right 키를 눌러 NPC Status 열기/닫기 토글
+        if (isRight && Keyboard.current.rightArrowKey.wasPressedThisFrame)
         {
             if (ui_Open)
             {
@@ -122,17 +176,24 @@ public class UI_StatusNPC : MonoBehaviour
 
     private void SelectNPC(int index)
     {
+        Debug.Log("Select NPC " + index);
         selectedNPC = npclist[index];
 
         // 제목 텍스트 업데이트
         npcNameText.text = selectedNPC.name;
 
         // 애니메이션 재생
-        if (animator != null && !ui_Open)
+        if(isRight && animator_right != null && !ui_Open)
         {
             openButton.onClick.Invoke();
             ui_Open = true;
         }
+        else if (animator != null && !ui_Open)
+        {
+            openButton.onClick.Invoke();
+            ui_Open = true;
+        }
+
         //버튼 활성화 설정
         if (openButton != null && closeButton != null)
         {

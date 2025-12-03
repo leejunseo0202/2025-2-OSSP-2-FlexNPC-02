@@ -38,6 +38,8 @@ public class NPCAI_Utility_BehaviorTree : MonoBehaviour
 
     void Start()
     {
+        if (gameObject.name.Contains("ML_Agent"))   return;
+
         criticalNode = new List<int>();
         secondaryNode = new List<int>();
         idleNode = new List<int>();
@@ -61,6 +63,8 @@ public class NPCAI_Utility_BehaviorTree : MonoBehaviour
 
     void Update()
     {
+        if (gameObject.name.Contains("ML_Agent")) return;
+
         UpdateNeeds();
 
         if (!isMovingToTarget && currentTarget == null)
@@ -207,7 +211,6 @@ public class NPCAI_Utility_BehaviorTree : MonoBehaviour
             // 목표 도착
             if (ReachedTarget(currentTarget))
             {
-                Debug.Log("test1");
                 StartCoroutine(InteractWithTarget(currentTarget, targetTag));
                 isMovingToTarget = false;
             }
