@@ -7,6 +7,7 @@ using UnityEngine;
 using UnityEngine.AI;
 using UnityEngine.LightTransport;
 using UnityEngine.UIElements;
+using static UnityEngine.GraphicsBuffer;
 
 public class NeedsAgent : Agent
 {
@@ -18,6 +19,7 @@ public class NeedsAgent : Agent
     public float hygiene = 0f;
     public float fun = 0f;
     public float energy = 0f;
+    public bool randomNeedsStart = true;
 
     [Header("Need Thresholds")]
     public float needLowThreshold = 0.3f;  // 욕구가 낮다고 판단하는 기준
@@ -34,7 +36,6 @@ public class NeedsAgent : Agent
 
     public float detectRadius = 10f; // 주변 탐지 반경
 
-    private float logTimer = 0f;
 
     private float elapsedTime = 0f;
     public float episodeDuration = 60f; // 에피소드 길이(초 단위)
@@ -68,6 +69,11 @@ public class NeedsAgent : Agent
         {
             if (count >= maxObjects) break;
 
+            if (hit.gameObject == this.gameObject)
+            {
+                continue;
+            }
+            
             Building b = hit.GetComponent<Building>();
             if (b == null) continue;
 
@@ -148,6 +154,25 @@ public class NeedsAgent : Agent
     {
         isInteracting = true;
         agent.isStopped = true;
+        Building building = target.GetComponent<Building>();
+
+        NeedsAgent partner = DetectAgentOnSocialTarget(target);
+        if (partner != null)
+        {
+            // 상대 Agent도 동일 건물과 상호작용 실행
+            bool accepted = partner.ForcePartnerInteraction(this, building);
+            if (!accepted)
+            {
+                agent.isStopped = false;
+                agent.ResetPath();
+
+                agent.isStopped = false;
+                isInteracting = false;
+                currentTarget = null;
+
+                yield break;
+            }
+        }
 
         float interactDuration = 2.0f; // 상호작용 시간
         float elapsed = 0f;
@@ -158,7 +183,7 @@ public class NeedsAgent : Agent
             yield return null;
         }
 
-        Building building = target.GetComponent<Building>();
+        
 
         if (building != null && building.isFunctioning)
         {
@@ -193,7 +218,7 @@ public class NeedsAgent : Agent
             AddReward(-0.1f);
         }
 
-        Debug.Log($"Interacted with {target.tag} | Hunger:{hunger:F2}, Toilet:{toilet:F2}, Social:{social:F2}, Hygiene:{hygiene:F2}, Fun:{fun:F2}, Energy:{energy:F2}");
+        Debug.Log($"{this.name} interacted with {target.name} | Hunger:{hunger:F2}, Toilet:{toilet:F2}, Social:{social:F2}, Hygiene:{hygiene:F2}, Fun:{fun:F2}, Energy:{energy:F2}");
 
         agent.isStopped = false;
         isInteracting = false;
@@ -220,16 +245,18 @@ public class NeedsAgent : Agent
     // 5. 에피소드 랜덤 초기화
     public override void OnEpisodeBegin()
     {
-        hunger = Random.value;
-        toilet = Random.value;
-        social = Random.value;
-        hygiene = Random.value;
-        fun = Random.value;
-        energy = Random.value;
+        if (randomNeedsStart)
+        {
+            hunger = Random.value;
+            toilet = Random.value;
+            social = Random.value;
+            hygiene = Random.value;
+            fun = Random.value;
+            energy = Random.value;
+
+        }
 
         elapsedTime = 0f;
-
-        // (선택) 에이전트 위치 초기화
     }
 
     // 5. 시간 경과에 따른 이동 처리, 욕구 증가
@@ -256,12 +283,7 @@ public class NeedsAgent : Agent
 
         UpdateNeeds();
 
-        logTimer += Time.deltaTime;
-        if (logTimer >= 1.0f)
-        {
-            logTimer = 0f;
-            Debug.Log($"Hunger:{hunger:F2}, Toilet:{toilet:F2}, Social:{social:F2}, Hygiene:{hygiene:F2}, Fun:{fun:F2}, Energy:{energy:F2}");
-        }
+        
         
         elapsedTime += Time.deltaTime;
 
@@ -302,7 +324,7 @@ public class NeedsAgent : Agent
 
         foreach (Collider col in hitColliders)
         {
-            if (col.CompareTag(tag))
+            if (col.CompareTag(tag) && col.gameObject != this.gameObject)
             {
                 float dist = Vector3.Distance(transform.position, col.transform.position);
                 if (dist < minDist)
@@ -313,6 +335,70 @@ public class NeedsAgent : Agent
             }
         }
         return nearest;
+    }
+
+    public bool ForcePartnerInteraction(NeedsAgent requester, Building building)
+    {
+        if (isInteracting) return false; // 상호작용 중이면 무시
+
+        StartCoroutine(PartnerInteractionRoutine(requester, building));
+        return true;
+    }
+
+    private IEnumerator PartnerInteractionRoutine(NeedsAgent requester, Building building)
+    {
+        isInteracting = true;
+        isMovingToTarget = false;
+        currentTarget = null;
+        if (agent != null) {
+            agent.isStopped = true;
+            agent.ResetPath();
+        }
+
+        float t = 0f;
+        float duration = 2f;
+
+        while (t < duration)
+        {
+            t += Time.deltaTime;
+            yield return null;
+        }
+
+        // 건물 효과 동일 적용
+        if (building != null && building.isFunctioning)
+        {
+            List<NeedModification> effects = building.UseBuilding(agentId, 1f, 0);
+            ProcessNeedEffects(effects);
+        }
+
+        Debug.Log($"{this.name} interacted with {requester.name} | Hunger:{hunger:F2}, Toilet:{toilet:F2}, Social:{social:F2}, Hygiene:{hygiene:F2}, Fun:{fun:F2}, Energy:{energy:F2}");
+
+        if (agent != null)
+            agent.isStopped = false;
+        isInteracting = false;
+    }
+
+    void ProcessNeedEffects(List<NeedModification> effects)
+    {
+        if (effects == null || effects.Count == 0)
+        {
+            AddReward(-0.1f);
+            return;
+        }
+
+        float totalReward = 0f;
+
+        foreach (var eff in effects)
+        {
+            float before = GetNeedValue(eff.needTag);
+            ApplyNeedModification(eff);
+            float after = GetNeedValue(eff.needTag);
+
+            if (eff.amount < 0)
+                totalReward += before - after;
+        }
+
+        AddReward(totalReward);
     }
 
 
@@ -347,6 +433,18 @@ public class NeedsAgent : Agent
                fun < needLowThreshold &&
                energy < needLowThreshold;
     }
+
+    private NeedsAgent DetectAgentOnSocialTarget(Transform target)
+    {
+        if (target == null) return null;
+
+        // 자기 자신 제외
+        if (target.gameObject == this.gameObject)
+            return null;
+
+        return target.GetComponent<NeedsAgent>();
+    }
+
     #endregion
 
 }
