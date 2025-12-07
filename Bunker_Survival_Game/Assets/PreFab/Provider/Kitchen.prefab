@@ -130,6 +130,7 @@ MonoBehaviour:
   requiredResourceTag: Power
   requiresResourceToFunction: 1
   isFunctioning: 1
+  resourceManager: {fileID: 0}
   needEffects:
   - needTag: Hunger
     amount: 50
@@ -137,7 +138,5 @@ MonoBehaviour:
     amount: -10
   - needTag: Fun
     amount: 10
-  maxStock: 100
-  currentStock: 100
   npcConsumptionRules: []
   defaultConsumption: 1
