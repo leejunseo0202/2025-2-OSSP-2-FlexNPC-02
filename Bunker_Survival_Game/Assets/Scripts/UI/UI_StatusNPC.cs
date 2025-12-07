@@ -1,11 +1,15 @@
 using JetBrains.Annotations;
+using System.Collections.Generic;
 using Unity.Burst.CompilerServices;
+using Unity.MLAgents.Actuators;
+using Unity.MLAgents.Policies;
 using UnityEngine;
 using UnityEngine.AI;
 using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.EnhancedTouch;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
+using static GameDefinitions;
 using static UnityEngine.EventSystems.EventTrigger;
 
 public class UI_StatusNPC : MonoBehaviour
@@ -14,10 +18,10 @@ public class UI_StatusNPC : MonoBehaviour
     public Image[] guageImage = new Image[6];
     public TMPro.TMP_Text npcNameText;
 
-    public NPCAI_Utility_BehaviorTree selectedNPC = null;
+    public NeedsAgent selectedNPC = null;
     public Button[] npcButton;
     public TMPro.TMP_Text[] npcText;
-    public NPCAI_Utility_BehaviorTree[] npclist;
+    public NeedsAgent[] npclist;
 
     private NavMeshAgent navMesh;
 
@@ -38,35 +42,99 @@ public class UI_StatusNPC : MonoBehaviour
     // 설정 버튼
     public Button settingButton;
     public bool isRight = false;
+
+
+    public GameObject needsAgentPrefab;
+
     void Start()
     {
-
         if (SceneManager.GetActiveScene().name == "PlayScene")
         {
             numberOfNPC = PlayerPrefs.GetInt("NumberOfNPC");
-            npclist = new NPCAI_Utility_BehaviorTree[numberOfNPC + 1];
+            npclist = new NeedsAgent[numberOfNPC + 1];
 
             // NPC 수에 따라 NPC 생성
             for (int i = 1; i <= numberOfNPC; i++)
             {
-                Vector3 spawnPoint = new Vector3((float)i * 1.5f, 1, 0);
+                Vector3 spawnPoint = new Vector3((float)i * 1.5f - 10f, 1, 0);
 
-                GameObject npcObj = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+                GameObject npcObj = Instantiate(needsAgentPrefab, spawnPoint, Quaternion.identity);
                 npcObj.name = "NPC" + i + "_ML_Agent";
-                npcObj.transform.position = spawnPoint;
+                npclist[i] = npcObj.GetComponent<NeedsAgent>();
+                //GameObject npcObj = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                //npcObj.name = "NPC" + i + "_ML_Agent";
+                //npcObj.transform.position = spawnPoint;
+                //npcObj.tag = "Social";
 
-                // Test 스크립트 컴포넌트 추가
-                NPCAI_Utility_BehaviorTree newNpc = npcObj.AddComponent<NPCAI_Utility_BehaviorTree>();
-                NavMeshAgent navMesh = npcObj.AddComponent<NavMeshAgent>();
 
-                // Spawn 위치가 NavMesh 위에 있는지 확인하고 Warp
-                NavMeshHit hit;
-                if (NavMesh.SamplePosition(spawnPoint, out hit, 5f, NavMesh.AllAreas))
-                    navMesh.Warp(hit.position); //NavMesh 위로 이동
-                else
-                    Debug.LogWarning(npcObj.name + " NavMesh위에 없음");
+                //// 2.1 NeedsAgent  스크립트 컴포넌트 추가
+                //NeedsAgent newNpc = npcObj.AddComponent<NeedsAgent>();
 
-                npclist[i] = newNpc;
+                //// 2.2 Behavior Parameters 설정
+                //var bp = npcObj.AddComponent<Unity.MLAgents.Policies.BehaviorParameters>();
+                //bp.BehaviorName = "NeedsAgentBehavior";
+                //bp.BrainParameters.VectorObservationSize = 36;
+                //bp.BrainParameters.ActionSpec = Unity.MLAgents.Actuators.ActionSpec.MakeDiscrete(6);
+
+                //// 2.3 NavMeshAgent Properties 적용
+                //NavMeshAgent navMesh = npcObj.AddComponent<NavMeshAgent>();
+                //navMesh.speed = 3f;
+                //navMesh.angularSpeed = 120f;
+                //navMesh.acceleration = 8f;
+                //navMesh.stoppingDistance = 1f;
+                //navMesh.autoBraking = true;
+
+                //navMesh.radius = 0.5f;
+                //navMesh.height = 1f;
+                //navMesh.obstacleAvoidanceType = ObstacleAvoidanceType.HighQualityObstacleAvoidance;
+                //navMesh.avoidancePriority = 50;
+
+                //// Path Finding
+                //navMesh.autoTraverseOffMeshLink = true;
+                //navMesh.autoRepath = true;
+                //navMesh.areaMask = NavMesh.AllAreas;
+
+                //// 2.4 BoxCollider 적용
+                //BoxCollider col = npcObj.AddComponent<BoxCollider>();
+                //col.center = Vector3.zero;
+                //col.size = new Vector3(1f, 1f, 1f);
+
+                //// 2.5 Rigidbody 추가
+                //Rigidbody rb = npcObj.AddComponent<Rigidbody>();
+                //rb.mass = 1f;
+                //rb.useGravity = true;
+                //rb.isKinematic = false;
+                //rb.interpolation = RigidbodyInterpolation.None;
+                //rb.collisionDetectionMode = CollisionDetectionMode.Discrete;
+                //rb.centerOfMass = Vector3.zero;
+
+                ////
+                //SimpleBuilding building = npcObj.AddComponent<SimpleBuilding>();
+
+                //// 1. 정보 설정
+                //building.buildingName = "New Building";
+                //building.size = new Vector2Int(1, 1);
+                //building.height = 1;
+
+                //// 2. 기능 설정
+                //building.requiredResourceTag = "";
+                //building.requiresResourceToFunction = false;
+
+                //// 5. 현재 상태
+                //building.isFunctioning = true;
+
+                //// 3. Need Effects
+                //building.needEffects = new List<NeedModification>();
+                //building.needEffects.Add(new NeedModification
+                //{
+                //    needTag = NeedType.Social,
+                //    amount = 10
+                //});
+
+
+
+
+
 
                 //버튼 활성화
                 if (npcButton != null && npcText != null)
@@ -208,8 +276,9 @@ public class UI_StatusNPC : MonoBehaviour
         }
     }
 
-    private void UpdateGuage(NPCAI_Utility_BehaviorTree npcStatus)
+    private void UpdateGuage(NeedsAgent npcStatus)
     {
+        Debug.Log("Update");
         float[] statusValue = new float[6];
         statusValue[0] = npcStatus.hunger;
         statusValue[1] = npcStatus.toilet;
