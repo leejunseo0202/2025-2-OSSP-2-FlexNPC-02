@@ -32,9 +32,9 @@ public class NeedsAgent : Agent
     private bool isInteracting = false;      // 상호작용 중인가?
     private Transform currentTarget = null;  // 현재 목표 Building
     private float movementTimer = 0f;        // 목표 향해 이동한 시간
-    private float maxMoveTime = 3f;          // 목표 미도달 시 실패 처리 기준
+    private float maxMoveTime = 15f;          // 목표 미도달 시 실패 처리 기준
 
-    public float detectRadius = 10f; // 주변 탐지 반경
+    public float detectRadius = 10000f; // 주변 탐지 반경
 
 
     private float elapsedTime = 0f;
@@ -410,7 +410,7 @@ public class NeedsAgent : Agent
     bool ReachedTarget(Transform target)
     {
         float distance = Vector3.Distance(transform.position, target.position);
-        return distance < 1.5f; // 도착 허용 거리
+        return distance < 2.5f; // 도착 허용 거리
     }
 
     float GetNeedValue(string tag)
