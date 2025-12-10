@@ -410,7 +410,7 @@ public class NeedsAgent : Agent
     bool ReachedTarget(Transform target)
     {
         float distance = Vector3.Distance(transform.position, target.position);
-        return distance < 2.5f; // 도착 허용 거리
+        return distance < 5.0f; // 도착 허용 거리
     }
 
     float GetNeedValue(string tag)
