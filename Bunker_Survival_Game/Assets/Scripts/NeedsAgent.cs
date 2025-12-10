@@ -5,6 +5,8 @@ using Unity.MLAgents.Actuators;
 using Unity.MLAgents.Sensors;
 using UnityEngine;
 using UnityEngine.AI;
+using System.IO;
+using System.Text;
 using UnityEngine.LightTransport;
 using UnityEngine.UIElements;
 using static UnityEngine.GraphicsBuffer;
@@ -26,6 +28,15 @@ public class NeedsAgent : Agent
     public float needHighThreshold = 0.7f; // 욕구가 높다고 판단하는 기준
 
     public float scanInterval = 0.5f;
+
+    [Header("Debug / Record")]
+    public bool recordStat = false;
+
+    private float recordTimer = 0f;
+    private float recordInterval = 1.0f;
+
+    private StringBuilder csvBuilder;
+    private string csvPath;
 
     private NavMeshAgent agent;
     private bool isMovingToTarget = false;   // 현재 목표로 이동 중인가?
@@ -260,6 +271,23 @@ public class NeedsAgent : Agent
         }
 
         elapsedTime = 0f;
+
+        recordTimer = 0f;
+
+        if (recordStat)
+        {
+            csvBuilder = new StringBuilder();
+            csvBuilder.AppendLine(
+                "time,x,z,hunger,toilet,social,hygiene,fun,energy,reward"
+            );
+
+            string dir = Application.dataPath + "/StatLogs";
+            if (!Directory.Exists(dir))
+                Directory.CreateDirectory(dir);
+
+            csvPath =
+                $"{dir}/agent_{name}_{System.DateTime.Now:yyyyMMdd_HHmmss}.csv";
+        }
     }
 
     // 5. 시간 경과에 따른 이동 처리, 욕구 증가
@@ -292,7 +320,17 @@ public class NeedsAgent : Agent
 
         if (elapsedTime >= episodeDuration)
         {
-            EndEpisode();
+            FinishEpisode();
+        }
+
+        if (recordStat)
+        {
+            recordTimer += Time.deltaTime;
+            if (recordTimer >= recordInterval)
+            {
+                recordTimer = 0f;
+                RecordStatLine();
+            }
         }
     }
 
@@ -404,6 +442,29 @@ public class NeedsAgent : Agent
         AddReward(totalReward);
     }
 
+    void RecordStatLine()
+    {
+        Vector3 pos = transform.position;
+        float reward = GetCumulativeReward();
+
+        csvBuilder.AppendLine(
+            $"{Time.time:F2}," +
+            $"{pos.x:F2},{pos.z:F2}," +
+            $"{hunger:F3},{toilet:F3},{social:F3},{hygiene:F3},{fun:F3},{energy:F3}," +
+            $"{reward:F3}"
+        );
+    }
+
+    void FinishEpisode()
+    {
+        if (recordStat && csvBuilder != null)
+        {
+            File.WriteAllText(csvPath, csvBuilder.ToString());
+            Debug.Log($"[STAT] Saved CSV: {csvPath}");
+        }
+
+        EndEpisode();
+    }
 
     #region Helper Methods
 

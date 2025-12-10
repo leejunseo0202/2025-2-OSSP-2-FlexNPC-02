@@ -3,6 +3,8 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.AI;
+using System.IO;
+using System.Text;
 using UnityEngine.InputSystem.Utilities;
 using UnityEngine.LightTransport;
 
@@ -15,6 +17,7 @@ public class NPCAI_Utility_BehaviorTree : MonoBehaviour
     public float hygiene = 0;
     public float fun     = 0;
     public float energy  = 0;
+    public bool randomNeedsStart = true;
     private List<int> criticalNode;
     private List<int> secondaryNode;
     private List<int> idleNode;
@@ -24,6 +27,16 @@ public class NPCAI_Utility_BehaviorTree : MonoBehaviour
     public float needHighThreshold = 0.7f;
 
     public float detectRadius = 10f;
+
+    [Header("Debug / Record")]
+    public bool recordStat = false;
+
+    private float recordTimer = 0f;
+    private float recordInterval = 1.0f;
+
+    private StringBuilder csvBuilder;
+    private string csvPath;
+
     private NavMeshAgent agent;
     private Transform currentTarget = null;
     private bool isInteracting = false;
@@ -35,30 +48,51 @@ public class NPCAI_Utility_BehaviorTree : MonoBehaviour
     private float maxMoveTime = 3f;          // 목표 미도달 시 실패 처리 기준
     List<string> needName = new List<string>();
 
+    private float elapsedTime = 0f;
+    public float episodeDuration = 60f; // 에피소드 길이(초 단위)
 
     void Start()
     {
-        if (gameObject.name.Contains("ML_Agent"))   return;
+        if (gameObject.name.Contains("ML_Agent")) return;
 
         criticalNode = new List<int>();
         secondaryNode = new List<int>();
         idleNode = new List<int>();
 
         agent = GetComponent<NavMeshAgent>();
-
-        hunger = Random.Range(0f, 0.2f);
-        toilet = Random.Range(0f, 0.2f);
-        social = Random.Range(0f, 0.2f);
-        hygiene = Random.Range(0f, 0.2f);
-        fun = Random.Range(0f, 0.2f);
-        energy = Random.Range(0f, 0.2f);
-
+        if (randomNeedsStart) {
+            hunger = Random.value;
+            toilet = Random.value;
+            social = Random.value;
+            hygiene = Random.value;
+            fun = Random.value;
+            energy = Random.value;
+        }
         needName.Add("Hunger");
         needName.Add("Toilet");
         needName.Add("Social");
         needName.Add("Hygiene");
         needName.Add("Fun");
         needName.Add("Energy");
+
+        elapsedTime = 0f;
+
+        recordTimer = 0f;
+
+        if (recordStat)
+        {
+            csvBuilder = new StringBuilder();
+            csvBuilder.AppendLine(
+                "time,x,z,hunger,toilet,social,hygiene,fun,energy,reward"
+            );
+
+            string dir = Application.dataPath + "/StatLogs";
+            if (!Directory.Exists(dir))
+                Directory.CreateDirectory(dir);
+
+            csvPath =
+                $"{dir}/agent_{name}_{System.DateTime.Now:yyyyMMdd_HHmmss}.csv";
+        }
     }
 
     void Update()
@@ -89,6 +123,24 @@ public class NPCAI_Utility_BehaviorTree : MonoBehaviour
 
         // 4. 목표 지점에 도착하면 상호작용 시작
         MoveNpc(targetTag);
+
+
+        elapsedTime += Time.deltaTime;
+
+        if (elapsedTime >= episodeDuration)
+        {
+            FinishEpisode();
+        }
+
+        if (recordStat)
+        {
+            recordTimer += Time.deltaTime;
+            if (recordTimer >= recordInterval)
+            {
+                recordTimer = 0f;
+                RecordStatLine();
+            }
+        }
     }
 
     // 1. behavior tree를 Critical Need, Secondary Need, Idle / Patrol 노드로 나눈다.
@@ -306,6 +358,25 @@ public class NPCAI_Utility_BehaviorTree : MonoBehaviour
         energy = Mathf.Clamp01(energy + delta);
     }
 
+    void RecordStatLine()
+    {
+        Vector3 pos = transform.position;
+
+        csvBuilder.AppendLine(
+            $"{Time.time:F2}," +
+            $"{pos.x:F2},{pos.z:F2}," +
+            $"{hunger:F3},{toilet:F3},{social:F3},{hygiene:F3},{fun:F3},{energy:F3}," +
+            $"{reward:F3}"
+        );
+    }
+    void FinishEpisode()
+    {
+        if (recordStat && csvBuilder != null)
+        {
+            File.WriteAllText(csvPath, csvBuilder.ToString());
+            Debug.Log($"[STAT] Saved CSV: {csvPath}");
+        }
+    }
 
     #region Helper Methods
     private float GetNeedValue(int i)
