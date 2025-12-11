@@ -1334,7 +1334,7 @@ MonoBehaviour:
   needLowThreshold: 0.3
   needHighThreshold: 0.7
   detectRadius: 10
-  recordStat: 1
+  recordStat: 0
   reward: 0
   episodeDuration: 60
 --- !u!1 &1616348639

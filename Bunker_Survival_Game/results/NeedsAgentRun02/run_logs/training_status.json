@@ -1,0 +1,65 @@
+{
+    "NeedsAgentBehavior": {
+        "checkpoints": [
+            {
+                "steps": 999921,
+                "file_path": "results\\NeedsAgentRun02\\NeedsAgentBehavior\\NeedsAgentBehavior-999921.onnx",
+                "reward": 1.5678093552123755,
+                "creation_time": 1765463739.0316985,
+                "auxillary_file_paths": [
+                    "results\\NeedsAgentRun02\\NeedsAgentBehavior\\NeedsAgentBehavior-999921.pt"
+                ]
+            },
+            {
+                "steps": 1499885,
+                "file_path": "results\\NeedsAgentRun02\\NeedsAgentBehavior\\NeedsAgentBehavior-1499885.onnx",
+                "reward": 1.1795239816145862,
+                "creation_time": 1765467546.4243894,
+                "auxillary_file_paths": [
+                    "results\\NeedsAgentRun02\\NeedsAgentBehavior\\NeedsAgentBehavior-1499885.pt"
+                ]
+            },
+            {
+                "steps": 1845192,
+                "file_path": "results\\NeedsAgentRun02\\NeedsAgentBehavior\\NeedsAgentBehavior-1845192.onnx",
+                "reward": 1.5752047058194876,
+                "creation_time": 1765470140.6744485,
+                "auxillary_file_paths": [
+                    "results\\NeedsAgentRun02\\NeedsAgentBehavior\\NeedsAgentBehavior-1845192.pt"
+                ]
+            },
+            {
+                "steps": 1999846,
+                "file_path": "results\\NeedsAgentRun02\\NeedsAgentBehavior\\NeedsAgentBehavior-1999846.onnx",
+                "reward": 1.3955670893192291,
+                "creation_time": 1765472672.4108772,
+                "auxillary_file_paths": [
+                    "results\\NeedsAgentRun02\\NeedsAgentBehavior\\NeedsAgentBehavior-1999846.pt"
+                ]
+            },
+            {
+                "steps": 2000046,
+                "file_path": "results\\NeedsAgentRun02\\NeedsAgentBehavior\\NeedsAgentBehavior-2000046.onnx",
+                "reward": 1.3955670893192291,
+                "creation_time": 1765472672.4631147,
+                "auxillary_file_paths": [
+                    "results\\NeedsAgentRun02\\NeedsAgentBehavior\\NeedsAgentBehavior-2000046.pt"
+                ]
+            }
+        ],
+        "final_checkpoint": {
+            "steps": 2000046,
+            "file_path": "results\\NeedsAgentRun02\\NeedsAgentBehavior.onnx",
+            "reward": 1.3955670893192291,
+            "creation_time": 1765472672.4631147,
+            "auxillary_file_paths": [
+                "results\\NeedsAgentRun02\\NeedsAgentBehavior\\NeedsAgentBehavior-2000046.pt"
+            ]
+        }
+    },
+    "metadata": {
+        "stats_format_version": "0.3.0",
+        "mlagents_version": "0.30.0",
+        "torch_version": "2.1.1+cpu"
+    }
+}

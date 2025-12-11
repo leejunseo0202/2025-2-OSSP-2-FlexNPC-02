@@ -349,7 +349,7 @@ public class NPCAI_Utility_BehaviorTree : MonoBehaviour
     // 시간에 따른 욕구 증가
     void UpdateNeeds()
     {
-        float delta = Time.deltaTime * 0.05f;
+        float delta = Time.deltaTime * 0.01f;
 
         hunger = Mathf.Clamp01(hunger + delta);
         toilet = Mathf.Clamp01(toilet + delta);
@@ -424,7 +424,7 @@ public class NPCAI_Utility_BehaviorTree : MonoBehaviour
     bool ReachedTarget(Transform target)
     {
         float distance = Vector3.Distance(transform.position, target.position);
-        bool contact = (distance < 1.5f);
+        bool contact = (distance < 5.0f);
         return contact; // 도착 허용 거리
     }
 
