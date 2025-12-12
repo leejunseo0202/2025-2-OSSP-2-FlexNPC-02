@@ -100,7 +100,7 @@ public class NeedsAgent : Agent
             count++;
         }
 
-        Debug.Log($"Observed {count} objects.");
+        // Debug.Log($"Observed {count} objects.");
         // 3. 부족한 오브젝트는 padding
         while (count < maxObjects)
         {

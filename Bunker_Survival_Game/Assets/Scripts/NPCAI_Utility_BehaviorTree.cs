@@ -26,7 +26,7 @@ public class NPCAI_Utility_BehaviorTree : MonoBehaviour
     public float needLowThreshold = 0.3f;
     public float needHighThreshold = 0.7f;
 
-    public float detectRadius = 10f;
+    public float detectRadius = 10000f;
 
     [Header("Debug / Record")]
     public bool recordStat = false;
@@ -45,7 +45,7 @@ public class NPCAI_Utility_BehaviorTree : MonoBehaviour
     private string targetTag;
     private bool isMovingToTarget = false;   // 현재 목표로 이동 중인가?
     private float movementTimer = 0f;        // 목표 향해 이동한 시간
-    private float maxMoveTime = 3f;          // 목표 미도달 시 실패 처리 기준
+    private float maxMoveTime = 15f;          // 목표 미도달 시 실패 처리 기준
     List<string> needName = new List<string>();
 
     private float elapsedTime = 0f;
@@ -129,6 +129,7 @@ public class NPCAI_Utility_BehaviorTree : MonoBehaviour
 
         if (elapsedTime >= episodeDuration)
         {
+            elapsedTime = 0f;
             FinishEpisode();
         }
 
@@ -348,14 +349,24 @@ public class NPCAI_Utility_BehaviorTree : MonoBehaviour
     // 시간에 따른 욕구 증가
     void UpdateNeeds()
     {
-        float delta = Time.deltaTime * 0.05f;
+        float delta = Time.deltaTime * 0.01f;
 
         hunger = Mathf.Clamp01(hunger + delta);
         toilet = Mathf.Clamp01(toilet + delta);
-        //social = Mathf.Clamp01(social + delta);
+        social = Mathf.Clamp01(social + delta);
         hygiene = Mathf.Clamp01(hygiene + delta);
         fun = Mathf.Clamp01(fun + delta);
         energy = Mathf.Clamp01(energy + delta);
+
+        // 2. 지속적 보상
+        if (hunger > needHighThreshold) reward += (-0.01f * Time.deltaTime);
+        if (toilet > needHighThreshold) reward += (-0.01f * Time.deltaTime);
+        if (social > needHighThreshold) reward += (-0.01f * Time.deltaTime);
+        if (hygiene > needHighThreshold) reward += (-0.01f * Time.deltaTime);
+        if (fun > needHighThreshold) reward += (-0.01f * Time.deltaTime);
+        if (energy > needHighThreshold) reward += (-0.01f * Time.deltaTime);
+
+        if (AllNeedsStable()) reward += (0.01f * Time.deltaTime);
     }
 
     void RecordStatLine()
@@ -413,8 +424,18 @@ public class NPCAI_Utility_BehaviorTree : MonoBehaviour
     bool ReachedTarget(Transform target)
     {
         float distance = Vector3.Distance(transform.position, target.position);
-        bool contact = (distance < 1.5f);
+        bool contact = (distance < 5.0f);
         return contact; // 도착 허용 거리
+    }
+
+    bool AllNeedsStable()
+    {
+        return hunger < needLowThreshold &&
+               toilet < needLowThreshold &&
+               social < needLowThreshold &&
+               hygiene < needLowThreshold &&
+               fun < needLowThreshold &&
+               energy < needLowThreshold;
     }
     #endregion
 }
