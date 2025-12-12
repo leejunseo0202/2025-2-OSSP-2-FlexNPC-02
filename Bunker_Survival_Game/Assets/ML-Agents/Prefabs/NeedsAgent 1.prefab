@@ -261,6 +261,7 @@ MonoBehaviour:
   needLowThreshold: 0.3
   needHighThreshold: 0.7
   scanInterval: 0.5
+  recordStat: 0
   detectRadius: 10
   episodeDuration: 60
   agentId: NPC_01

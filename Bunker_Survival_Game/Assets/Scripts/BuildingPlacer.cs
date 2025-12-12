@@ -1,12 +1,14 @@
+using System.Collections.Generic;
+using System.Resources;
 using UnityEngine;
 using UnityEngine.InputSystem;
-using System.Collections.Generic;
 
 public class BuildingPlacer : MonoBehaviour
 {
     // --- [누락되었던 변수 정의] ---
     private GridManager gridManager;
     public LayerMask groundLayerMask;
+    public ResourceManager resourceManager;
 
     [Header("프리팹")]
     public List<GameObject> buildingPrefabs;
@@ -189,8 +191,18 @@ public class BuildingPlacer : MonoBehaviour
     // [Refactored] 4. 배치 확정
     void PlaceBuilding()
     {
-        Instantiate(currentPrefabToBuild, currentSnappedWorldPos, Quaternion.identity);
+        GameObject building = Instantiate(currentPrefabToBuild, currentSnappedWorldPos, Quaternion.identity);
+        // 2) 생성된 건물에 ResourceManager 주입
+        var storage = building.GetComponent<StorageBuilding>();
+        if (storage != null)
+        {
+            storage.resourceManager = resourceManager;
+        }
+
+        // 3) 그리드 점유 처리
         gridManager.SetGridOccupied(currentGridPos, currentBuildingSize, true);
+
+        // 4) 빌딩 배치 모드 종료
         StopPlacing();
     }
 

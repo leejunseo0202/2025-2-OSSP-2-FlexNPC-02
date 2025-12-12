@@ -5,6 +5,8 @@ using Unity.MLAgents.Actuators;
 using Unity.MLAgents.Sensors;
 using UnityEngine;
 using UnityEngine.AI;
+using System.IO;
+using System.Text;
 using UnityEngine.LightTransport;
 using UnityEngine.UIElements;
 using static UnityEngine.GraphicsBuffer;
@@ -27,14 +29,23 @@ public class NeedsAgent : Agent
 
     public float scanInterval = 0.5f;
 
+    [Header("Debug / Record")]
+    public bool recordStat = false;
+
+    private float recordTimer = 0f;
+    private float recordInterval = 1.0f;
+
+    private StringBuilder csvBuilder;
+    private string csvPath;
+
     private NavMeshAgent agent;
     private bool isMovingToTarget = false;   // 현재 목표로 이동 중인가?
     private bool isInteracting = false;      // 상호작용 중인가?
     private Transform currentTarget = null;  // 현재 목표 Building
     private float movementTimer = 0f;        // 목표 향해 이동한 시간
-    private float maxMoveTime = 3f;          // 목표 미도달 시 실패 처리 기준
+    private float maxMoveTime = 15f;          // 목표 미도달 시 실패 처리 기준
 
-    public float detectRadius = 10f; // 주변 탐지 반경
+    public float detectRadius = 10000f; // 주변 탐지 반경
 
 
     private float elapsedTime = 0f;
@@ -44,6 +55,8 @@ public class NeedsAgent : Agent
     void Start()
     {
         agent = GetComponent<NavMeshAgent>();
+        // 속도 변경
+        agent.speed = 10f;
     }
 
 
@@ -89,7 +102,7 @@ public class NeedsAgent : Agent
             count++;
         }
 
-        Debug.Log($"Observed {count} objects.");
+        // Debug.Log($"Observed {count} objects.");
         // 3. 부족한 오브젝트는 padding
         while (count < maxObjects)
         {
@@ -260,6 +273,23 @@ public class NeedsAgent : Agent
         }
 
         elapsedTime = 0f;
+
+        recordTimer = 0f;
+
+        if (recordStat)
+        {
+            csvBuilder = new StringBuilder();
+            csvBuilder.AppendLine(
+                "time,x,z,hunger,toilet,social,hygiene,fun,energy,reward"
+            );
+
+            string dir = Application.dataPath + "/StatLogs";
+            if (!Directory.Exists(dir))
+                Directory.CreateDirectory(dir);
+
+            csvPath =
+                $"{dir}/agent_{name}_{System.DateTime.Now:yyyyMMdd_HHmmss}.csv";
+        }
     }
 
     // 5. 시간 경과에 따른 이동 처리, 욕구 증가
@@ -292,7 +322,17 @@ public class NeedsAgent : Agent
 
         if (elapsedTime >= episodeDuration)
         {
-            EndEpisode();
+            FinishEpisode();
+        }
+
+        if (recordStat)
+        {
+            recordTimer += Time.deltaTime;
+            if (recordTimer >= recordInterval)
+            {
+                recordTimer = 0f;
+                RecordStatLine();
+            }
         }
     }
 
@@ -404,13 +444,36 @@ public class NeedsAgent : Agent
         AddReward(totalReward);
     }
 
+    void RecordStatLine()
+    {
+        Vector3 pos = transform.position;
+        float reward = GetCumulativeReward();
+
+        csvBuilder.AppendLine(
+            $"{Time.time:F2}," +
+            $"{pos.x:F2},{pos.z:F2}," +
+            $"{hunger:F3},{toilet:F3},{social:F3},{hygiene:F3},{fun:F3},{energy:F3}," +
+            $"{reward:F3}"
+        );
+    }
+
+    void FinishEpisode()
+    {
+        if (recordStat && csvBuilder != null)
+        {
+            File.WriteAllText(csvPath, csvBuilder.ToString());
+            Debug.Log($"[STAT] Saved CSV: {csvPath}");
+        }
+
+        EndEpisode();
+    }
 
     #region Helper Methods
 
     bool ReachedTarget(Transform target)
     {
         float distance = Vector3.Distance(transform.position, target.position);
-        return distance < 1.5f; // 도착 허용 거리
+        return distance < 5.0f; // 도착 허용 거리
     }
 
     float GetNeedValue(string tag)

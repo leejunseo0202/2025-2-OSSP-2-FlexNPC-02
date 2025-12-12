@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Unity.Burst.CompilerServices;
 using Unity.MLAgents.Actuators;
 using Unity.MLAgents.Policies;
+using UnityEditor.Playables;
 using UnityEngine;
 using UnityEngine.AI;
 using UnityEngine.InputSystem;
@@ -19,6 +20,8 @@ public class UI_StatusNPC : MonoBehaviour
     public TMPro.TMP_Text npcNameText;
 
     public NeedsAgent selectedNPC = null;
+    public NPCAI_Utility_BehaviorTree selectedNPC_BT = null;
+
     public Button[] npcButton;
     public TMPro.TMP_Text[] npcText;
     public NeedsAgent[] npclist;
@@ -59,83 +62,9 @@ public class UI_StatusNPC : MonoBehaviour
                 Vector3 spawnPoint = new Vector3((float)i * 1.5f - 10f, 1, 0);
 
                 GameObject npcObj = Instantiate(needsAgentPrefab, spawnPoint, Quaternion.identity);
-                npcObj.name = "NPC" + i + "_ML_Agent";
+                npcObj.name = "NPC" + i;
                 npclist[i] = npcObj.GetComponent<NeedsAgent>();
-                //GameObject npcObj = GameObject.CreatePrimitive(PrimitiveType.Cube);
-                //npcObj.name = "NPC" + i + "_ML_Agent";
-                //npcObj.transform.position = spawnPoint;
-                //npcObj.tag = "Social";
-
-
-                //// 2.1 NeedsAgent  스크립트 컴포넌트 추가
-                //NeedsAgent newNpc = npcObj.AddComponent<NeedsAgent>();
-
-                //// 2.2 Behavior Parameters 설정
-                //var bp = npcObj.AddComponent<Unity.MLAgents.Policies.BehaviorParameters>();
-                //bp.BehaviorName = "NeedsAgentBehavior";
-                //bp.BrainParameters.VectorObservationSize = 36;
-                //bp.BrainParameters.ActionSpec = Unity.MLAgents.Actuators.ActionSpec.MakeDiscrete(6);
-
-                //// 2.3 NavMeshAgent Properties 적용
-                //NavMeshAgent navMesh = npcObj.AddComponent<NavMeshAgent>();
-                //navMesh.speed = 3f;
-                //navMesh.angularSpeed = 120f;
-                //navMesh.acceleration = 8f;
-                //navMesh.stoppingDistance = 1f;
-                //navMesh.autoBraking = true;
-
-                //navMesh.radius = 0.5f;
-                //navMesh.height = 1f;
-                //navMesh.obstacleAvoidanceType = ObstacleAvoidanceType.HighQualityObstacleAvoidance;
-                //navMesh.avoidancePriority = 50;
-
-                //// Path Finding
-                //navMesh.autoTraverseOffMeshLink = true;
-                //navMesh.autoRepath = true;
-                //navMesh.areaMask = NavMesh.AllAreas;
-
-                //// 2.4 BoxCollider 적용
-                //BoxCollider col = npcObj.AddComponent<BoxCollider>();
-                //col.center = Vector3.zero;
-                //col.size = new Vector3(1f, 1f, 1f);
-
-                //// 2.5 Rigidbody 추가
-                //Rigidbody rb = npcObj.AddComponent<Rigidbody>();
-                //rb.mass = 1f;
-                //rb.useGravity = true;
-                //rb.isKinematic = false;
-                //rb.interpolation = RigidbodyInterpolation.None;
-                //rb.collisionDetectionMode = CollisionDetectionMode.Discrete;
-                //rb.centerOfMass = Vector3.zero;
-
-                ////
-                //SimpleBuilding building = npcObj.AddComponent<SimpleBuilding>();
-
-                //// 1. 정보 설정
-                //building.buildingName = "New Building";
-                //building.size = new Vector2Int(1, 1);
-                //building.height = 1;
-
-                //// 2. 기능 설정
-                //building.requiredResourceTag = "";
-                //building.requiresResourceToFunction = false;
-
-                //// 5. 현재 상태
-                //building.isFunctioning = true;
-
-                //// 3. Need Effects
-                //building.needEffects = new List<NeedModification>();
-                //building.needEffects.Add(new NeedModification
-                //{
-                //    needTag = NeedType.Social,
-                //    amount = 10
-                //});
-
-
-
-
-
-
+                
                 //버튼 활성화
                 if (npcButton != null && npcText != null)
                 {
@@ -163,35 +92,17 @@ public class UI_StatusNPC : MonoBehaviour
     void Update()
     {
         shift = Keyboard.current.shiftKey.isPressed;
-        if (Keyboard.current.digit1Key.wasPressedThisFrame && numberOfNPC >= 1 && !shift) SelectNPC(1);
-        if (Keyboard.current.digit2Key.wasPressedThisFrame && numberOfNPC >= 2 && !shift) SelectNPC(2);
-        if (Keyboard.current.digit3Key.wasPressedThisFrame && numberOfNPC >= 3 && !shift) SelectNPC(3);
-        if (Keyboard.current.digit4Key.wasPressedThisFrame && numberOfNPC >= 4 && !shift) SelectNPC(4);
 
-        if (SceneManager.GetActiveScene().name == "Compare_NPC_AI")
+        if (SceneManager.GetActiveScene().name != "Compare_NPC_AI")
         {
-            if (Keyboard.current.digit1Key.wasPressedThisFrame && !shift && !isRight) SelectNPC(1);
-            if (Keyboard.current.digit2Key.wasPressedThisFrame && !shift && !isRight) SelectNPC(2);
-            if (Keyboard.current.digit3Key.wasPressedThisFrame && !shift && !isRight) SelectNPC(3);
-            if (Keyboard.current.digit4Key.wasPressedThisFrame && !shift && !isRight) SelectNPC(4);
-
-            if (Keyboard.current.digit1Key.wasPressedThisFrame && shift && isRight) SelectNPC(1);
-            if (Keyboard.current.digit2Key.wasPressedThisFrame && shift && isRight) SelectNPC(2);
-            if (Keyboard.current.digit3Key.wasPressedThisFrame && shift && isRight) SelectNPC(3);
-            if (Keyboard.current.digit4Key.wasPressedThisFrame && shift && isRight) SelectNPC(4);
-
-            // back키
-            if (Keyboard.current.bKey.wasPressedThisFrame && ui_ShowGuageGroup.activeSelf && shift && isRight)
-            {
-                if (ui_SelectNPCGroup != null)
-                    ui_SelectNPCGroup.SetActive(true);
-
-                if (ui_ShowGuageGroup != null)
-                    ui_ShowGuageGroup.SetActive(false);
-            }
+            if (Keyboard.current.digit1Key.wasPressedThisFrame && numberOfNPC >= 1 && !shift) SelectNPC(1);
+            if (Keyboard.current.digit2Key.wasPressedThisFrame && numberOfNPC >= 2 && !shift) SelectNPC(2);
+            if (Keyboard.current.digit3Key.wasPressedThisFrame && numberOfNPC >= 3 && !shift) SelectNPC(3);
+            if (Keyboard.current.digit4Key.wasPressedThisFrame && numberOfNPC >= 4 && !shift) SelectNPC(4);
         }
 
-            // back키
+
+        // back키
         if (Keyboard.current.bKey.wasPressedThisFrame && ui_ShowGuageGroup.activeSelf && !isRight)
         {
             if (ui_SelectNPCGroup != null)
@@ -240,6 +151,9 @@ public class UI_StatusNPC : MonoBehaviour
 
         if (selectedNPC != null)
             UpdateGuage(selectedNPC);
+
+        if(selectedNPC_BT != null)
+            UpdateGuageBT(selectedNPC_BT);
     }
 
     private void SelectNPC(int index)
@@ -277,6 +191,30 @@ public class UI_StatusNPC : MonoBehaviour
     }
 
     private void UpdateGuage(NeedsAgent npcStatus)
+    {
+        Debug.Log("Update");
+        float[] statusValue = new float[6];
+        statusValue[0] = npcStatus.hunger;
+        statusValue[1] = npcStatus.toilet;
+        statusValue[2] = npcStatus.social;
+        statusValue[3] = npcStatus.hygiene;
+        statusValue[4] = npcStatus.fun;
+        statusValue[5] = npcStatus.energy;
+        for (int i = 0; i < guage.Length; i++)
+        {
+            float clamped = Mathf.Clamp(statusValue[i], 0.0f, 1.0f);
+            float newWidth = (clamped) * maxWidth;
+
+            Vector2 size = guage[i].sizeDelta;
+            size.x = Mathf.Lerp(size.x, newWidth, Time.deltaTime * 5f);
+            guage[i].sizeDelta = size;
+
+            if (guageImage[i] != null)
+                guageImage[i].color = Color.Lerp(Color.red, Color.green, clamped);
+        }
+    }
+
+    private void UpdateGuageBT(NPCAI_Utility_BehaviorTree npcStatus)
     {
         Debug.Log("Update");
         float[] statusValue = new float[6];
