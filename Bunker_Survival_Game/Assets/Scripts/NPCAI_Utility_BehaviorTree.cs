@@ -1,10 +1,11 @@
 ﻿using JetBrains.Annotations;
 using System.Collections;
 using System.Collections.Generic;
-using UnityEngine;
-using UnityEngine.AI;
 using System.IO;
 using System.Text;
+using Unity.MLAgents;
+using UnityEngine;
+using UnityEngine.AI;
 using UnityEngine.InputSystem.Utilities;
 using UnityEngine.LightTransport;
 
@@ -96,6 +97,7 @@ public class NPCAI_Utility_BehaviorTree : MonoBehaviour
             csvPath =
                 $"{dir}/agent_{name}_{System.DateTime.Now:yyyyMMdd_HHmmss}.csv";
         }
+        hunger = 0f;
     }
 
     void Update()
@@ -302,7 +304,7 @@ public class NPCAI_Utility_BehaviorTree : MonoBehaviour
 
         if (building != null && building.isFunctioning)
         {
-            List<NeedModification> effects = building.UseBuilding(gameObject.name, 1f, 0);
+            List<NeedModification> effects = building.UseBuilding("NPC_01", 5f, 1);
 
             if (effects != null && effects.Count > 0)
             {

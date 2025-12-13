@@ -64,7 +64,7 @@ public class UI_StatusNPC : MonoBehaviour
                 GameObject npcObj = Instantiate(needsAgentPrefab, spawnPoint, Quaternion.identity);
                 npcObj.name = "NPC" + i;
                 npclist[i] = npcObj.GetComponent<NeedsAgent>();
-                
+
                 //버튼 활성화
                 if (npcButton != null && npcText != null)
                 {
@@ -73,6 +73,8 @@ public class UI_StatusNPC : MonoBehaviour
                     npcText[i].text = "NPC" + i;
                 }
             }
+            for (int i = 1; i <= numberOfNPC; i++)
+                npclist[i].agentId = "NPC_0" + i;
 
         }
 
@@ -192,7 +194,6 @@ public class UI_StatusNPC : MonoBehaviour
 
     private void UpdateGuage(NeedsAgent npcStatus)
     {
-        Debug.Log("Update");
         float[] statusValue = new float[6];
         statusValue[0] = npcStatus.hunger;
         statusValue[1] = npcStatus.toilet;
@@ -210,13 +211,12 @@ public class UI_StatusNPC : MonoBehaviour
             guage[i].sizeDelta = size;
 
             if (guageImage[i] != null)
-                guageImage[i].color = Color.Lerp(Color.red, Color.green, clamped);
+                guageImage[i].color = Color.Lerp(Color.green, Color.red, clamped);
         }
     }
 
     private void UpdateGuageBT(NPCAI_Utility_BehaviorTree npcStatus)
     {
-        Debug.Log("Update");
         float[] statusValue = new float[6];
         statusValue[0] = npcStatus.hunger;
         statusValue[1] = npcStatus.toilet;
@@ -234,7 +234,7 @@ public class UI_StatusNPC : MonoBehaviour
             guage[i].sizeDelta = size;
 
             if (guageImage[i] != null)
-                guageImage[i].color = Color.Lerp(Color.red, Color.green, clamped);
+                guageImage[i].color = Color.Lerp(Color.green, Color.red, clamped);
         }
     }
 }

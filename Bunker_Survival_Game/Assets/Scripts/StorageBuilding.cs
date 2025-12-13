@@ -44,6 +44,12 @@ public class StorageBuilding : Building // Building을 상속!
     /// </summary>
     public override List<NeedModification> UseBuilding(string npcId, float amountRequested, int resourceType)
     {
+        int npcIndex = 0;
+        if (npcId == "NPC_01") npcIndex = 0;
+        else if (npcId == "NPC_02") npcIndex = 1;
+        else if (npcId == "NPC_03") npcIndex = 2;
+        else if (npcId == "NPC_04") npcIndex = 3;
+
         // 1. 건물이 작동 중이 아니면 (실패)
         if (!isFunctioning)
         {
@@ -53,20 +59,23 @@ public class StorageBuilding : Building // Building을 상속!
         // 2. 이 NPC("Human_A")의 "1회당 소모량"을 찾음 (예: 20)
         int amountToConsume = (int)GetConsumptionForNpc(npcId);
 
+        if(resourceType == 3)   return needEffects;
+
         Debug.Log($"npcId={npcId}, resourceType={resourceType}, requested={amountRequested}");
         Debug.Log($"resourceManager Null? => {resourceManager == null}");
-        Debug.Log($"resourceManager.currentStock[resourceType] Null? => {resourceManager.currentStock[resourceType] == null}");
         // 3. 건물의 '현재 재고'가 '1회당 소모량'보다 적은지 확인
-        if (resourceManager.currentStock[resourceType] < amountToConsume)
+        if (resourceManager.sharedStock[resourceType+1 + npcIndex * 3] < amountToConsume)
         {
+            Debug.Log("재고");
             return new List<NeedModification>(); // 재고 부족 (실패)
         }
 
         // 4. [성공!] 모든 검사 통과
-        resourceManager.currentStock[resourceType] -= amountToConsume; // 건물 재고에서 "1회당 소모량" 차감
+        resourceManager.sharedStock[resourceType+1 + npcIndex * 3] -= amountToConsume; // 건물 재고에서 "1회당 소모량" 차감
 
         // NPC가 요청한 'amountRequested' 값은 이 로직에서 무시됩니다.
         // 건물은 단지 NPC에게 "효과 목록"만 반환합니다.
+        
         return needEffects; // "성공했으니 [Fun+20, Energy-20] 효과를 받아라"
     }
 

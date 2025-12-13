@@ -12,7 +12,7 @@ public class UI_StatusObject : MonoBehaviour
     private const int WATER = 1;
     private const int ENERGY = 2;
 
-    private string[] resourcelist = new string[3];
+    private string[] resourcelist = new string[4];
     public int selectedResource;
 
     public ResourceManager resource;
@@ -172,8 +172,9 @@ public class UI_StatusObject : MonoBehaviour
     // Resource Value 업데이트
     public void UpdateObjectValue(int resourceNum)
     {
+        Debug.Log("UpdateObjectValue called for resourceNum: " + resourceNum);
         for (int i = 1; i <= numberOfNPC; i++)
-            countText[i].text = resource.sharedStock[resourceNum, i].ToString();
+            countText[i].text = resource.sharedStock[resourceNum+1 + (i-1) * 3].ToString();
         totalText.text = resource.currentStock[resourceNum].ToString();
     }
 

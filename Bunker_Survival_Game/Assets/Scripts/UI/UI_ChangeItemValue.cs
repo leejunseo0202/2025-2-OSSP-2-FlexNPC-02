@@ -12,7 +12,7 @@ public class UI_ChangeItemValue : MonoBehaviour, IPointerDownHandler, IPointerUp
     public UI_StatusObject statusObject;
     
     public ResourceManager resource;
-    private int[,] sharedStock = new int[3, 5];
+    private int[] sharedStock = new int[13];
 
 
     public float repeatRate = 0.1f;     // 숫자 증가 간격
@@ -45,19 +45,18 @@ public class UI_ChangeItemValue : MonoBehaviour, IPointerDownHandler, IPointerUp
 
         while (isClick)
         {
-            if (direction == 1 && resource.maxStock[resourceNum] > 0 && resource.currentStock[resourceNum] > 0)
+            if (direction == 1 && resource.currentStock[resourceNum] > 0)
             {
-                sharedStock[resourceNum, npcNumber]++;
+                sharedStock[resourceNum+1 + (npcNumber-1)*3]++;
                 resource.currentStock[resourceNum]--;
             }
-            else if (direction == -1 && sharedStock[resourceNum, npcNumber] > 0 && resource.currentStock[resourceNum] > 0)
+            else if (direction == -1 && sharedStock[resourceNum+1 + (npcNumber - 1) * 3] > 0)
             {
-                sharedStock[resourceNum, npcNumber]--;
+                sharedStock[resourceNum+1 + (npcNumber - 1) * 3]--;
                 resource.currentStock[resourceNum]++;
             }
 
             yield return new WaitForSeconds(repeatRate);
         }
     }
-
 }

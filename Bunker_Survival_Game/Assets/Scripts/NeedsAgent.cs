@@ -10,6 +10,7 @@ using System.Text;
 using UnityEngine.LightTransport;
 using UnityEngine.UIElements;
 using static UnityEngine.GraphicsBuffer;
+using Unity.VisualScripting;
 
 public class NeedsAgent : Agent
 {
@@ -45,11 +46,13 @@ public class NeedsAgent : Agent
     private float movementTimer = 0f;        // 목표 향해 이동한 시간
     private float maxMoveTime = 15f;          // 목표 미도달 시 실패 처리 기준
 
-    public float detectRadius = 10000f; // 주변 탐지 반경
-
+    public float detectRadius = 100f; // 주변 탐지 반경
+    private Building[] allBuildings;
 
     private float elapsedTime = 0f;
     public float episodeDuration = 60f; // 에피소드 길이(초 단위)
+
+    public ResourceManager rm;
 
     public string agentId = "NPC_01";  // SimpleBuilding과 연동될 NPC ID
     void Start()
@@ -57,6 +60,15 @@ public class NeedsAgent : Agent
         agent = GetComponent<NavMeshAgent>();
         // 속도 변경
         agent.speed = 10f;
+        Building[] temp = FindObjectsByType<Building>(FindObjectsSortMode.None);
+        allBuildings = new Building[50];
+        for (int i = 0; i < temp.Length; i++)
+        {
+            if (temp[i].tag == "Untagged") continue;
+            allBuildings[i] = temp[i];
+        }
+
+        rm = FindAnyObjectByType<ResourceManager>();
     }
 
 
@@ -73,35 +85,39 @@ public class NeedsAgent : Agent
         sensor.AddObservation(energy);
 
         // 2. detectRadius 내 오브젝트 탐지
-        Collider[] hits = Physics.OverlapSphere(transform.position, detectRadius);
-
         int maxObjects = 10;  // 최대 n개까지만 관측 (고정 길이 필요)
         int count = 0;
 
-        foreach (var hit in hits)
+        if (allBuildings == null)
+        {
+            allBuildings = new Building[50];
+
+            Building[] temp = FindObjectsByType<Building>(FindObjectsSortMode.None);
+            for (int i = 0; i < temp.Length; i++)
+            {
+                if (temp[i].tag == "Untagged") continue;
+                allBuildings[i] = temp[i];
+            }
+        }
+        count = allBuildings.Length;
+
+        for (int i=0; i< allBuildings.Length; i++)
         {
             if (count >= maxObjects) break;
-
-            if (hit.gameObject == this.gameObject)
-            {
-                continue;
-            }
-            
-            Building b = hit.GetComponent<Building>();
-            if (b == null) continue;
+            GameObject hit = allBuildings[i].gameObject;
+            if (hit == this.gameObject)     continue;
 
             Vector3 relPos = hit.transform.position - transform.position;
-
             // 상대 좌표 (x, z)
             sensor.AddObservation(relPos.x);
             sensor.AddObservation(relPos.z);
-
+            
             // 태그 타입
             sensor.AddObservation(EncodeBuildingTag(hit.tag));
-
             count++;
         }
 
+        
         // Debug.Log($"Observed {count} objects.");
         // 3. 부족한 오브젝트는 padding
         while (count < maxObjects)
@@ -137,10 +153,12 @@ public class NeedsAgent : Agent
         // 1. Discrete Action으로 목표 선택
         int targetIndex = actions.DiscreteActions[0]; // 0~5 (6개 목표)
         string targetTag = GetTagFromAction(targetIndex);
+        Debug.Log("Target Tag: " + targetTag);
 
         // 2. 선택한 목표 태그에서 가장 가까운 목표 찾기
         GameObject nearestTarget = GetNearestTarget(targetTag);
-        if (nearestTarget == null) return;
+        if (nearestTarget == null)
+            return;
 
         if(agent == null)
             agent = GetComponent<NavMeshAgent>();
@@ -199,11 +217,15 @@ public class NeedsAgent : Agent
             yield return null;
         }
 
-        
-
         if (building != null && building.isFunctioning)
         {
-            List<NeedModification> effects = building.UseBuilding(agentId, 1f, 0);
+            int resourceType = 3;
+            if (building.requiredResourceTag == "Food") resourceType = 0;
+            else if (building.requiredResourceTag == "Water") resourceType = 1;
+            else if (building.requiredResourceTag == "Energy") resourceType = 2;
+            else resourceType = 3;
+
+            List<NeedModification> effects = building.UseBuilding(agentId, 5f, resourceType);
 
             if (effects != null && effects.Count > 0)
             {
@@ -212,6 +234,7 @@ public class NeedsAgent : Agent
                 {
                     float before = GetNeedValue(eff.needTag);
                     ApplyNeedModification(eff);
+
                     float after = GetNeedValue(eff.needTag);
 
                     if (eff.amount < 0)
@@ -228,6 +251,7 @@ public class NeedsAgent : Agent
             {
                 AddReward(-0.1f);
             }
+            
         }
         else
         {
@@ -253,6 +277,7 @@ public class NeedsAgent : Agent
             case "Energy": energy = Mathf.Clamp01(energy + mod.amount); break;
 
             default:
+                Debug.LogWarning(mod);
                 Debug.LogWarning($"Unknown Need Tag: {mod.needTag}");
                 break;
         }
@@ -361,12 +386,27 @@ public class NeedsAgent : Agent
 
     GameObject GetNearestTarget(string tag)
     {
-        Collider[] hitColliders = Physics.OverlapSphere(transform.position, detectRadius);
+        Building[] hitColliders = new Building[50];
+        if (allBuildings == null)
+        {
+            allBuildings = new Building[50];
+
+            Building[] temp = FindObjectsByType<Building>(FindObjectsSortMode.None);
+            for (int i = 0; i < temp.Length; i++)
+            {
+                if (temp[i].tag == "Untagged") continue;
+                allBuildings[i] = temp[i];
+            }
+        }
+        hitColliders = allBuildings;
+
         GameObject nearest = null;
         float minDist = Mathf.Infinity;
 
-        foreach (Collider col in hitColliders)
+        foreach (Building col in hitColliders)
         {
+            if(col == null)
+                   continue;
             if (col.CompareTag(tag) && col.gameObject != this.gameObject)
             {
                 float dist = Vector3.Distance(transform.position, col.transform.position);
@@ -377,6 +417,7 @@ public class NeedsAgent : Agent
                 }
             }
         }
+        Debug.Log("Nearest : " + nearest);
         return nearest;
     }
 
